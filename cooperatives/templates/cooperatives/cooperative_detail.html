@@ -1,0 +1,29 @@
+﻿{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="dashboard-panel p-4 p-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+      <div>
+        <p class="auth-badge mb-2">Cooperative</p>
+        <h1 class="h3 fw-bold mb-1">{{ cooperative.name }}</h1>
+        <p class="text-muted mb-0">{{ cooperative.region }} - {{ cooperative.province }}</p>
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-self-start">
+        <a class="btn btn-outline-secondary" href="{% url 'cooperatives:list' %}">Retour</a>
+        {% if can_manage %}
+          <a class="btn btn-outline-primary" href="{% url 'cooperatives:update' cooperative.pk %}">Modifier</a>
+          <a class="btn btn-outline-danger" href="{% url 'cooperatives:delete' cooperative.pk %}">Supprimer</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Adresse</div><div class="fw-semibold">{{ cooperative.address }}</div></div></div>
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Telephone</div><div class="fw-semibold">{{ cooperative.phone }}</div></div></div>
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Email</div><div class="fw-semibold">{{ cooperative.email }}</div></div></div>
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Date de creation</div><div class="fw-semibold">{{ cooperative.creation_date|date:'d/m/Y' }}</div></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

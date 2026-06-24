@@ -1,0 +1,38 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <p class="auth-badge mb-2">Administration</p>
+      <h1 class="h3 fw-bold mb-0">Gestion des roles</h1>
+    </div>
+  </div>
+  <div class="table-responsive table-panel">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Utilisateur</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for account in users %}
+          <tr>
+            <td class="fw-semibold">{{ account.get_full_name|default:account.username }}</td>
+            <td>{{ account.email|default:'-' }}</td>
+            <td><span class="role-chip">{{ account.profile.get_role_display }}</span></td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-success" href="{% url 'accounts:update_user_role' account.id %}">Modifier</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center py-4">Aucun utilisateur.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-shell mx-auto" style="max-width: 800px;">
+    <div class="auth-card">
+      <p class="auth-badge mb-3">Produit</p>
+      <h1 class="h3 fw-bold mb-2">{{ title }}</h1>
+      <p class="text-muted mb-4">Remplissez les informations du produit ci-dessous.</p>
+
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="row g-3">
+          {% for field in form %}
+            <div class="{% if field.name == 'description' or field.name == 'image' %}col-12{% else %}col-md-6{% endif %}">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+          <button class="btn btn-success" type="submit">{{ submit_label }}</button>
+          <a class="btn btn-outline-secondary" href="{% if product %}{% url 'products:detail' product.pk %}{% else %}{% url 'products:list' %}{% endif %}">Annuler</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

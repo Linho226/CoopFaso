@@ -1,0 +1,18 @@
+﻿{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-shell mx-auto" style="max-width: 620px;">
+    <div class="auth-card">
+      <p class="auth-badge mb-3">Desactivation</p>
+      <h1 class="h4 fw-bold mb-2">Desactiver ce membre ?</h1>
+      <p class="text-muted">Le membre <strong>{{ member.full_name }}</strong> ne sera pas supprime, mais son statut passera a inactif.</p>
+      <form method="post" class="d-flex flex-wrap gap-2 mt-4">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Desactiver</button>
+        <a class="btn btn-outline-secondary" href="{% url 'members:detail' member.pk %}">Annuler</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

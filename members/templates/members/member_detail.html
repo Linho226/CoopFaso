@@ -1,0 +1,38 @@
+﻿{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="dashboard-panel p-4 p-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+      <div class="d-flex gap-3 align-items-center">
+        {% if member.photo %}
+          <img src="{{ member.photo.url }}" alt="Photo de {{ member.full_name }}" class="rounded-4 object-fit-cover" width="96" height="96">
+        {% else %}
+          <div class="brand-mark" style="width: 96px; height: 96px; font-size: 1.5rem;">{{ member.first_name|slice:':1' }}{{ member.last_name|slice:':1' }}</div>
+        {% endif %}
+        <div>
+          <p class="auth-badge mb-2">Membre</p>
+          <h1 class="h3 fw-bold mb-1">{{ member.full_name }}</h1>
+          <p class="text-muted mb-0">{{ member.cooperative.name }}</p>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-self-start">
+        <a class="btn btn-outline-secondary" href="{% url 'members:list' %}">Retour</a>
+        {% if can_manage %}
+          <a class="btn btn-outline-primary" href="{% url 'members:update' member.pk %}">Modifier</a>
+          {% if member.is_active %}<a class="btn btn-outline-danger" href="{% url 'members:deactivate' member.pk %}">Desactiver</a>{% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Sexe</div><div class="fw-semibold">{{ member.get_gender_display }}</div></div></div>
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Date de naissance</div><div class="fw-semibold">{{ member.birth_date|date:'d/m/Y' }}</div></div></div>
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Telephone</div><div class="fw-semibold">{{ member.phone }}</div></div></div>
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Adresse</div><div class="fw-semibold">{{ member.address }}</div></div></div>
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Statut</div><div class="fw-semibold">{% if member.is_active %}Actif{% else %}Inactif{% endif %}</div></div></div>
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Cooperative</div><div class="fw-semibold">{{ member.cooperative.name }}</div></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

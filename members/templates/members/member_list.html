@@ -1,0 +1,58 @@
+﻿{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div>
+      <p class="auth-badge mb-2">Module 3</p>
+      <h1 class="h3 fw-bold mb-1">Gestion des membres</h1>
+      <p class="text-muted mb-0">Ajoutez, recherchez et suivez les membres des cooperatives.</p>
+    </div>
+    {% if can_manage %}
+      <a class="btn btn-success" href="{% url 'members:create' %}">Ajouter un membre</a>
+    {% endif %}
+  </div>
+
+  <form method="get" class="dashboard-panel p-3 mb-4">
+    <div class="row g-2 align-items-center">
+      <div class="col-lg-10">
+        <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Rechercher par nom, prenom, telephone, adresse ou cooperative">
+      </div>
+      <div class="col-lg-2 d-grid">
+        <button class="btn btn-success" type="submit">Rechercher</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="table-responsive table-panel">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Membre</th>
+          <th>Sexe</th>
+          <th>Cooperative</th>
+          <th>Telephone</th>
+          <th>Statut</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in members %}
+          <tr>
+            <td class="fw-semibold">{{ member.full_name }}</td>
+            <td>{{ member.get_gender_display }}</td>
+            <td>{{ member.cooperative.name }}</td>
+            <td>{{ member.phone }}</td>
+            <td>{% if member.is_active %}<span class="role-chip">Actif</span>{% else %}<span class="badge text-bg-secondary">Inactif</span>{% endif %}</td>
+            <td class="text-end">
+              <a class="btn btn-sm btn-outline-primary" href="{% url 'members:detail' member.pk %}">Voir</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center py-5 text-muted">Aucun membre trouve.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

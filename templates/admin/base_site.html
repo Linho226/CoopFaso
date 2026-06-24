@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | CoopFaso Admin{% endblock %}
+
+{% block branding %}
+<div class="cf-admin-brand">
+  <span class="cf-admin-logo">CF</span>
+  <div>
+    <h1 id="site-name"><a href="{% url 'admin:index' %}">Administration CoopFaso</a></h1>
+    <p>Gestion des utilisateurs, roles et modules agricoles</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'css/admin.css' %}">
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

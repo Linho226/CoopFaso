@@ -1,0 +1,55 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="dashboard-panel p-4 p-lg-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-4 mb-4">
+      <div class="d-flex flex-column flex-md-row gap-4 align-items-md-center">
+        {% if product.image %}
+          <img src="{{ product.image.url }}" alt="{{ product.name }}" class="rounded-4 object-fit-cover" width="160" height="160">
+        {% else %}
+          <div class="brand-mark bg-light text-secondary rounded-4 d-flex align-items-center justify-content-center" style="width: 160px; height: 160px; font-size: 2rem;">
+            {{ product.name|slice:":2"|upper }}
+          </div>
+        {% endif %}
+        <div>
+          <p class="auth-badge mb-2">Fiche Produit</p>
+          <h1 class="h2 fw-bold mb-1">{{ product.name }}</h1>
+          <p class="text-muted mb-0">Cooperative : <strong>{{ product.cooperative.name }}</strong></p>
+        </div>
+      </div>
+      <div class="d-flex flex-wrap gap-2 align-self-start">
+        <a class="btn btn-outline-secondary" href="{% url 'products:list' %}">Retour</a>
+        {% if can_manage %}
+          <a class="btn btn-outline-primary" href="{% url 'products:update' product.pk %}">Modifier</a>
+          <a class="btn btn-outline-danger" href="{% url 'products:delete' product.pk %}">Supprimer</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+      <div class="col-md-8">
+        <h5 class="fw-bold mb-3">Description</h5>
+        <div class="p-3 bg-light rounded-4 min-vh-25">
+          <p class="mb-0 text-secondary" style="white-space: pre-line;">{{ product.description|default:"Aucune description fournie pour ce produit." }}</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <h5 class="fw-bold mb-3">Details financiers & Stock</h5>
+        <div class="d-flex flex-column gap-3">
+          <div class="p-3 bg-light rounded-4">
+            <div class="text-muted small">Prix unitaire</div>
+            <div class="fw-bold fs-4 text-success">{{ product.price }} FCFA</div>
+          </div>
+          <div class="p-3 bg-light rounded-4">
+            <div class="text-muted small">Quantite disponible en stock</div>
+            <div class="fw-bold fs-4 {% if product.quantity_available > 0 %}text-primary{% else %}text-danger{% endif %}">
+              {{ product.quantity_available }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

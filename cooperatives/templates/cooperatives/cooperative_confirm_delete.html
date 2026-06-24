@@ -1,0 +1,18 @@
+﻿{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-shell mx-auto" style="max-width: 620px;">
+    <div class="auth-card">
+      <p class="auth-badge mb-3">Suppression</p>
+      <h1 class="h4 fw-bold mb-2">Supprimer la cooperative ?</h1>
+      <p class="text-muted">Cette action supprimera definitivement <strong>{{ cooperative.name }}</strong>.</p>
+      <form method="post" class="d-flex flex-wrap gap-2 mt-4">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Supprimer</button>
+        <a class="btn btn-outline-secondary" href="{% url 'cooperatives:detail' cooperative.pk %}">Annuler</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

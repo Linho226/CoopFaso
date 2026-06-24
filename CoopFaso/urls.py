@@ -1,4 +1,4 @@
-"""
+﻿"""
 URL configuration for CoopFaso project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -14,9 +14,25 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
+
+admin.site.site_header = 'Administration CoopFaso'
+admin.site.site_title = 'CoopFaso Admin'
+admin.site.index_title = 'Gestion de la plateforme'
 
 urlpatterns = [
+    path('', include('accounts.urls')),
+    path('cooperatives/', include('cooperatives.urls')),
+    path('membres/', include('members.urls')),
+    path('produits/', include('products.urls')),
+    path('productions/', include('productions.urls')),
     path('admin/', admin.site.urls),
 ]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

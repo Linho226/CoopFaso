@@ -1,0 +1,43 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-shell row g-0 mx-auto" style="max-width: 980px;">
+    <div class="col-lg-5">
+      <div class="auth-aside h-100 p-4 p-lg-5 d-flex flex-column justify-content-between">
+        <div>
+          <div class="auth-badge mb-4">Acces securise</div>
+          <h1 class="display-6 fw-bold mb-3">Bienvenue</h1>
+          <p class="lead mb-0">Connectez-vous pour gerer vos activites agricoles.</p>
+        </div>
+        <p class="small mb-0 opacity-75">CoopFaso protege vos donnees et vos roles.</p>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="auth-card">
+        <h2 class="h3 fw-bold mb-2">Connexion</h2>
+        <p class="text-muted mb-4">Entrez vos identifiants pour continuer.</p>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.username.id_for_label }}">Nom d'utilisateur</label>
+            {{ form.username }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.password.id_for_label }}">Mot de passe</label>
+            {{ form.password }}
+          </div>
+          <button class="btn btn-success btn-lg w-100" type="submit">Se connecter</button>
+        </form>
+        <div class="d-flex justify-content-between mt-3 small">
+          <a href="{% url 'accounts:register' %}">Creer un compte</a>
+          <a href="{% url 'accounts:password_reset' %}">Mot de passe oublie ?</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
