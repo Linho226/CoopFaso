@@ -10,10 +10,14 @@
         <p class="text-muted mb-0">{{ cooperative.region }} - {{ cooperative.province }}</p>
       </div>
       <div class="d-flex flex-wrap gap-2 align-self-start">
-        <a class="btn btn-outline-secondary" href="{% url 'cooperatives:list' %}">Retour</a>
+        {% if can_delete %}
+          <a class="btn btn-outline-secondary" href="{% url 'cooperatives:list' %}">Retour</a>
+        {% else %}
+          <a class="btn btn-outline-secondary" href="{% url 'accounts:dashboard' %}">Retour</a>
+        {% endif %}
         {% if can_manage %}
           <a class="btn btn-outline-primary" href="{% url 'cooperatives:update' cooperative.pk %}">Modifier</a>
-          <a class="btn btn-outline-danger" href="{% url 'cooperatives:delete' cooperative.pk %}">Supprimer</a>
+          {% if can_delete %}<a class="btn btn-outline-danger" href="{% url 'cooperatives:delete' cooperative.pk %}">Supprimer</a>{% endif %}
         {% endif %}
       </div>
     </div>
@@ -23,6 +27,13 @@
       <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Telephone</div><div class="fw-semibold">{{ cooperative.phone }}</div></div></div>
       <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Email</div><div class="fw-semibold">{{ cooperative.email }}</div></div></div>
       <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Date de creation</div><div class="fw-semibold">{{ cooperative.creation_date|date:'d/m/Y' }}</div></div></div>
+      <div class="col-md-6"><div class="p-3 bg-light rounded-4 h-100"><div class="text-muted small">Responsable</div><div class="fw-semibold">{% if manager %}{{ manager.get_full_name|default:manager.username }}{% else %}Non assigne{% endif %}</div></div></div>
+    </div>
+    <div class="row g-3 mt-2">
+      <div class="col-sm-6 col-xl-3"><div class="dashboard-panel p-3 h-100"><small class="text-muted">Membres</small><strong class="d-block fs-3">{{ member_count }}</strong><a href="{% url 'members:list' %}?cooperative={{ cooperative.pk }}">Consulter</a></div></div>
+      <div class="col-sm-6 col-xl-3"><div class="dashboard-panel p-3 h-100"><small class="text-muted">Produits</small><strong class="d-block fs-3">{{ product_count }}</strong><a href="{% url 'products:list' %}?cooperative={{ cooperative.pk }}">Consulter</a></div></div>
+      <div class="col-sm-6 col-xl-3"><div class="dashboard-panel p-3 h-100"><small class="text-muted">Productions</small><strong class="d-block fs-3">{{ production_total|floatformat:"-2" }}</strong><a href="{% url 'productions:list' %}?cooperative={{ cooperative.pk }}">Consulter</a></div></div>
+      <div class="col-sm-6 col-xl-3"><div class="dashboard-panel p-3 h-100"><small class="text-muted">Stock disponible</small><strong class="d-block fs-3">{{ stock_total|floatformat:"-2" }}</strong></div></div>
     </div>
   </div>
 </div>

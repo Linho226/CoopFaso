@@ -1,0 +1,32 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="auth-shell mx-auto" style="max-width: 920px;">
+    <div class="auth-card">
+      <p class="auth-badge mb-3">Formation agricole</p>
+      <h1 class="h3 fw-bold">{{ title }}</h1>
+      <p class="text-muted">Les questions du quiz se gerent depuis l’administration Django apres creation du cours.</p>
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <div class="row g-3">
+          {% for field in form %}
+            <div class="{% if field.name == 'theme' or field.name == 'is_published' %}col-md-6{% else %}col-12{% endif %}">
+              {% if field.name == 'is_published' %}
+                <div class="form-check mt-4">{{ field }} <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label }}</label></div>
+              {% else %}
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+              {% endif %}
+              {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="d-flex gap-2 mt-4">
+          <button class="btn btn-success" type="submit">Enregistrer</button>
+          <a class="btn btn-outline-secondary" href="{% if course %}{{ course.get_absolute_url }}{% else %}{% url 'training:list' %}{% endif %}">Annuler</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

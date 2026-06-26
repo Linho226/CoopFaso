@@ -1,0 +1,41 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-1">Messages recus</h1>
+      <p class="text-muted mb-0">{{ new_message_count }} nouveau{{ new_message_count|pluralize }} message{{ new_message_count|pluralize }} a traiter.</p>
+    </div>
+    <form method="get">
+      <select class="form-select" name="status" onchange="this.form.submit()">
+        <option value="">Tous les statuts</option>
+        {% for value, label in statuses %}
+          <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+  <div class="table-responsive table-panel">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>Expediteur</th><th>Motif</th><th>Objet</th><th>Date</th><th>Statut</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for item in contact_messages %}
+          <tr>
+            <td><strong>{{ item.name }}</strong><div class="small text-muted">{{ item.email }}</div></td>
+            <td>{{ item.get_category_display }}</td>
+            <td>{{ item.subject }}</td>
+            <td>{{ item.created_at|date:'d/m/Y H:i' }}</td>
+            <td><span class="role-chip">{{ item.get_status_display }}</span></td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:message_manage' item.pk %}">Traiter</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center text-muted py-5">Aucun message trouve.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

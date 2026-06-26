@@ -6,29 +6,41 @@ class ProductForm(forms.ModelForm):
         model = Product
         fields = (
             'cooperative',
+            'category',
             'name',
             'description',
             'price',
             'quantity_available',
             'image',
+            'is_published',
         )
         labels = {
             'cooperative': 'Cooperative',
+            'category': 'Categorie',
             'name': 'Nom du produit',
             'description': 'Description',
             'price': 'Prix (FCFA)',
             'quantity_available': 'Quantite disponible',
             'image': 'Image',
+            'is_published': 'Visible dans le catalogue public',
         }
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
         }
 
     def __init__(self, *args, **kwargs):
+        cooperative = kwargs.pop('cooperative', None)
         super().__init__(*args, **kwargs)
+        if cooperative:
+            self.fields['cooperative'].initial = cooperative
+            self.fields['cooperative'].queryset = self.fields[
+                'cooperative'
+            ].queryset.filter(pk=cooperative.pk)
         for field in self.fields.values():
             if isinstance(field.widget, forms.Select):
                 field.widget.attrs.setdefault('class', 'form-select')
+            elif isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.setdefault('class', 'form-check-input')
             elif isinstance(field.widget, forms.ClearableFileInput):
                 field.widget.attrs.setdefault('class', 'form-control')
             else:

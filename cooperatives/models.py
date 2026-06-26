@@ -10,6 +10,10 @@ class Cooperative(models.Model):
     region = models.CharField('region', max_length=120)
     province = models.CharField('province', max_length=120)
     creation_date = models.DateField('date de creation')
+    description = models.TextField('presentation', blank=True)
+    logo = models.ImageField('logo', upload_to='cooperatives/logos/', blank=True, null=True)
+    location_url = models.URLField('lien de localisation', blank=True)
+    is_public = models.BooleanField('visible publiquement', default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -19,6 +19,7 @@ class ProductTests(TestCase):
         )
         self.manager = User.objects.create_user(username="manager_p", password="Password123!")
         self.manager.profile.role = UserProfile.Role.COOPERATIVE_MANAGER
+        self.manager.profile.cooperative = self.cooperative
         self.manager.profile.save()
 
         self.farmer = User.objects.create_user(username="farmer_p", password="Password123!")
@@ -32,16 +33,23 @@ class ProductTests(TestCase):
             price=250.00,
             quantity_available=100.00,
         )
+        self.other_cooperative = Cooperative.objects.create(
+            name='Autre Coop Produits',
+            address='Bobo',
+            phone='+22670000009',
+            email='autre-products@coopfaso.bf',
+            region='Hauts-Bassins',
+            province='Houet',
+            creation_date=date(2026, 1, 2),
+        )
 
-    def test_authenticated_user_can_view_products(self):
+    def test_farmer_cannot_access_product_management(self):
         self.client.force_login(self.farmer)
         response = self.client.get(reverse('products:list'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Mais")
+        self.assertRedirects(response, reverse('accounts:dashboard'))
 
         response_detail = self.client.get(reverse('products:detail', args=[self.product.pk]))
-        self.assertEqual(response_detail.status_code, 200)
-        self.assertContains(response_detail, "Mais local")
+        self.assertRedirects(response_detail, reverse('accounts:dashboard'))
 
     def test_manager_can_create_and_delete_product(self):
         self.client.force_login(self.manager)
@@ -76,3 +84,15 @@ class ProductTests(TestCase):
         response = self.client.post(reverse('products:create'), payload)
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Product.objects.filter(name='Sorgho').exists())
+
+    def test_manager_cannot_create_product_for_another_cooperative(self):
+        self.client.force_login(self.manager)
+        response = self.client.post(reverse('products:create'), {
+            'cooperative': self.other_cooperative.pk,
+            'name': 'Produit interdit',
+            'price': 100,
+            'quantity_available': 5,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Product.objects.filter(name='Produit interdit').exists())

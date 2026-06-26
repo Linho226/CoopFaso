@@ -1,0 +1,42 @@
+{% extends base_template %}
+
+{% block content %}
+<div class="py-5 buyer-public-page">
+  <div class="mb-4">
+    <p class="auth-badge mb-2">Validation</p>
+    <h1 class="h3 fw-bold mb-1">Finaliser la commande</h1>
+    <p class="text-muted">Confirmez la livraison avant de passer au paiement.</p>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="dashboard-panel p-4">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+          {% endfor %}
+          <button class="btn btn-success w-100" type="submit">Confirmer et choisir le paiement</button>
+        </form>
+      </div>
+    </div>
+    <div class="col-lg-5">
+      <div class="dashboard-panel p-4">
+        <h2 class="h5 fw-bold mb-3">Votre commande</h2>
+        {% for item in items %}
+          <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <span>{{ item.product.name }} × {{ item.quantity }}</span>
+            <strong>{{ item.subtotal }} FCFA</strong>
+          </div>
+        {% endfor %}
+        <div class="d-flex justify-content-between pt-3 fs-5">
+          <strong>Total</strong><strong class="text-success">{{ total }} FCFA</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

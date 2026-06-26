@@ -1,4 +1,6 @@
+from django.core.exceptions import ValidationError
 from django.db import models
+from decimal import Decimal
 from django.urls import reverse
 from members.models import Member
 from products.models import Product
@@ -31,9 +33,24 @@ class Production(models.Model):
         return f"{self.member.full_name} - {self.product.name} - {self.quantity}"
 
     def save(self, *args, **kwargs):
+        self.full_clean()
         if not self.estimated_price:
-            self.estimated_price = self.quantity * self.product.price
+            self.estimated_price = (
+                Decimal(str(self.quantity))
+                * Decimal(str(self.product.price))
+            )
         super().save(*args, **kwargs)
+
+    def clean(self):
+        super().clean()
+        if (
+            self.member_id
+            and self.product_id
+            and self.member.cooperative_id != self.product.cooperative_id
+        ):
+            raise ValidationError(
+                'Le membre et le produit doivent appartenir a la meme cooperative.'
+            )
 
     def get_absolute_url(self):
         return reverse('productions:list')

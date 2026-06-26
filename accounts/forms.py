@@ -11,17 +11,10 @@ from .models import UserProfile
 
 
 class SignUpForm(UserCreationForm):
-    allowed_roles = (
-        (UserProfile.Role.COOPERATIVE_MANAGER, 'Responsable de cooperative'),
-        (UserProfile.Role.FARMER, 'Agriculteur'),
-        (UserProfile.Role.BUYER, 'Acheteur'),
-    )
-
     first_name = forms.CharField(label='Prenom', max_length=150)
     last_name = forms.CharField(label='Nom', max_length=150)
     email = forms.EmailField(label='Email')
     phone = forms.CharField(label='Telephone', max_length=30, required=False)
-    role = forms.ChoiceField(label='Role', choices=allowed_roles)
 
     class Meta(UserCreationForm.Meta):
         model = User
@@ -31,7 +24,6 @@ class SignUpForm(UserCreationForm):
             'last_name',
             'email',
             'phone',
-            'role',
             'password1',
             'password2',
         )
@@ -43,7 +35,6 @@ class SignUpForm(UserCreationForm):
         self.fields['username'].label = "Nom d'utilisateur"
         self.fields['password1'].label = 'Mot de passe'
         self.fields['password2'].label = 'Confirmation'
-        self.fields['role'].widget.attrs['class'] = 'form-select'
 
     def clean_email(self):
         email = self.cleaned_data['email'].lower()
@@ -59,21 +50,75 @@ class SignUpForm(UserCreationForm):
         if commit:
             user.save()
             profile, _ = UserProfile.objects.get_or_create(user=user)
-            profile.role = self.cleaned_data['role']
+            profile.role = UserProfile.Role.BUYER
             profile.phone = self.cleaned_data['phone']
-            profile.save()
+            profile.cooperative = None
+            profile.save(update_fields=['role', 'phone', 'cooperative', 'updated_at'])
         return user
 
 
 class RoleUpdateForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ('role',)
-        labels = {'role': 'Role'}
+        fields = ('role', 'cooperative')
+        labels = {
+            'role': 'Role',
+            'cooperative': 'Cooperative rattachee',
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['role'].widget.attrs.setdefault('class', 'form-select')
+        for field in self.fields.values():
+            field.widget.attrs.setdefault('class', 'form-select')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        cooperative = cleaned_data.get('cooperative')
+        if role == UserProfile.Role.COOPERATIVE_MANAGER:
+            if not cooperative:
+                self.add_error(
+                    'cooperative',
+                    'Selectionnez la cooperative geree par ce responsable.',
+                )
+            elif UserProfile.objects.filter(
+                role=UserProfile.Role.COOPERATIVE_MANAGER,
+                cooperative=cooperative,
+            ).exclude(pk=self.instance.pk).exists():
+                self.add_error(
+                    'cooperative',
+                    'Cette cooperative possede deja un responsable.',
+                )
+        return cleaned_data
+
+
+class ProfileForm(forms.Form):
+    first_name = forms.CharField(label='Prenom', max_length=150)
+    last_name = forms.CharField(label='Nom', max_length=150)
+    email = forms.EmailField(label='Email')
+    phone = forms.CharField(label='Telephone', max_length=30, required=False)
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        if user and not self.is_bound:
+            self.initial.update({
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'email': user.email,
+                'phone': getattr(user.profile, 'phone', ''),
+            })
+        for field in self.fields.values():
+            field.widget.attrs.setdefault('class', 'form-control')
+
+    def save(self):
+        self.user.first_name = self.cleaned_data['first_name']
+        self.user.last_name = self.cleaned_data['last_name']
+        self.user.email = self.cleaned_data['email']
+        self.user.save(update_fields=['first_name', 'last_name', 'email'])
+        self.user.profile.phone = self.cleaned_data['phone']
+        self.user.profile.save(update_fields=['phone', 'updated_at'])
+        return self.user
 
 
 class StyledAuthenticationForm(AuthenticationForm):

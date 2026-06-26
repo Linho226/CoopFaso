@@ -19,20 +19,23 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-admin.site.site_header = 'Administration CoopFaso'
-admin.site.site_title = 'CoopFaso Admin'
-admin.site.index_title = 'Gestion de la plateforme'
+from .admin_site import configure_admin_site
+
+configure_admin_site()
 
 urlpatterns = [
-    path('', include('accounts.urls')),
-    path('cooperatives/', include('cooperatives.urls')),
+    path('', include('public_site.urls')),
+    path('espace/', include('accounts.urls')),
+    path('gestion/cooperatives/', include('cooperatives.urls')),
     path('membres/', include('members.urls')),
     path('produits/', include('products.urls')),
     path('productions/', include('productions.urls')),
+    path('ventes/', include('sales.urls')),
+    path('paiements/', include('payments.urls')),
+    path('espace/formations/', include('training.urls')),
     path('admin/', admin.site.urls),
 ]
 
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-

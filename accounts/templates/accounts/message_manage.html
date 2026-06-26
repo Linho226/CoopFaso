@@ -1,0 +1,45 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <p class="auth-badge mb-2">{{ contact_message.get_category_display }}</p>
+      <h1 class="h3 fw-bold mb-1">{{ contact_message.subject }}</h1>
+      <p class="text-muted mb-0">{{ contact_message.name }} · {{ contact_message.email }} · {{ contact_message.created_at|date:'d/m/Y H:i' }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'accounts:message_inbox' %}">Retour</a>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="dashboard-panel p-4">
+        <h2 class="h5 fw-bold">Message recu</h2>
+        <p>{{ contact_message.message|linebreaksbr }}</p>
+        {% if contact_message.phone %}<div class="small text-muted">Telephone</div><strong>{{ contact_message.phone }}</strong>{% endif %}
+        {% if contact_message.sender and contact_message.category == 'ROLE_REQUEST' %}
+          <hr>
+          <a class="btn btn-outline-primary" href="{% url 'accounts:update_user_role' contact_message.sender.pk %}">Gerer le role de cet utilisateur</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="dashboard-panel p-4">
+        <h2 class="h5 fw-bold mb-3">Traiter la demande</h2>
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.status.id_for_label }}">{{ form.status.label }}</label>
+            {{ form.status }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="{{ form.admin_reply.id_for_label }}">{{ form.admin_reply.label }}</label>
+            {{ form.admin_reply }}
+            {% for error in form.admin_reply.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+          <button class="btn btn-success w-100" type="submit">Enregistrer et repondre</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

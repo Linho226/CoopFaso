@@ -1,0 +1,6 @@
+{% extends 'public_site/base.html' %}
+{% block title %}Actualites · CoopFaso{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="public-container"><span class="eyebrow">Information agricole</span><h1>Actualites agricoles</h1><p>Initiatives, evenements et informations utiles aux acteurs du secteur.</p></div></section>
+<section class="public-section"><div class="public-container"><div class="card-grid news-grid">{% for item in news_items %}<article class="news-card">{% if item.image %}<img src="{{ item.image.url }}" alt="{{ item.title }}">{% else %}<div class="news-placeholder">Actualite</div>{% endif %}<div><time>{{ item.published_at|date:"d M Y" }}</time><h2><a href="{{ item.get_absolute_url }}">{{ item.title }}</a></h2><p>{{ item.summary }}</p><a href="{{ item.get_absolute_url }}">Lire la suite →</a></div></article>{% empty %}<div class="empty-state">Aucune actualite publiee.</div>{% endfor %}</div></div></section>
+{% endblock %}

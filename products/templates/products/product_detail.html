@@ -47,6 +47,19 @@
               {{ product.quantity_available }}
             </div>
           </div>
+          {% if product.quantity_available > 0 %}
+            <form method="post" action="{% url 'sales:cart_add' product.pk %}" class="p-3 border rounded-4">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{% url 'sales:cart' %}">
+              <label class="form-label" for="quantity">Quantite</label>
+              <div class="input-group">
+                <input class="form-control" id="quantity" type="number" name="quantity" min="1" max="{{ product.quantity_available|floatformat:'0' }}" value="1" required>
+                <button class="btn btn-success" type="submit">Ajouter au panier</button>
+              </div>
+            </form>
+          {% else %}
+            <div class="alert alert-warning mb-0">Ce produit est actuellement en rupture de stock.</div>
+          {% endif %}
         </div>
       </div>
     </div>

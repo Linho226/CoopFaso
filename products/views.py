@@ -1,68 +1,94 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.db.models import Q
+from django.db.models import Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
+
+from accounts.access import is_manager, roles_required, user_cooperative
+from accounts.models import UserProfile
+from cooperatives.models import Cooperative
+
 from .forms import ProductForm
 from .models import Product
 
-def can_manage_products(user):
-    if not user.is_authenticated:
-        return False
-    if user.is_superuser or user.is_staff:
-        return True
-    role = getattr(getattr(user, 'profile', None), 'role', None)
-    return role in {'ADMIN', 'COOPERATIVE_MANAGER'}
-
-@login_required
+@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.COOPERATIVE_MANAGER)
 def product_list(request):
     query = request.GET.get('q', '').strip()
+    selected_cooperative = request.GET.get('cooperative', '').strip()
     products = Product.objects.select_related('cooperative')
+    if is_manager(request.user):
+        manager_cooperative = user_cooperative(request.user)
+        products = products.filter(cooperative=manager_cooperative)
+        selected_cooperative = str(getattr(manager_cooperative, 'pk', ''))
+    elif selected_cooperative:
+        products = products.filter(cooperative_id=selected_cooperative)
     if query:
         products = products.filter(
             Q(name__icontains=query) |
             Q(cooperative__name__icontains=query)
         )
+    cooperative_groups = Cooperative.objects.all()
+    if selected_cooperative:
+        cooperative_groups = cooperative_groups.filter(pk=selected_cooperative)
+    cooperative_groups = cooperative_groups.prefetch_related(
+        Prefetch('products', queryset=products, to_attr='filtered_products')
+    ).annotate(stock_total=Sum('products__quantity_available'))
     return render(request, 'products/product_list.html', {
         'products': products,
+        'cooperative_groups': cooperative_groups,
+        'cooperatives': Cooperative.objects.all(),
         'query': query,
-        'can_manage': can_manage_products(request.user),
+        'selected_cooperative': selected_cooperative,
+        'is_manager_view': is_manager(request.user),
+        'can_manage': True,
     })
 
-@login_required
+@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.COOPERATIVE_MANAGER)
 def product_detail(request, pk):
-    product = get_object_or_404(Product.objects.select_related('cooperative'), pk=pk)
+    products = Product.objects.select_related('cooperative')
+    if is_manager(request.user):
+        products = products.filter(cooperative=user_cooperative(request.user))
+    product = get_object_or_404(products, pk=pk)
     return render(request, 'products/product_detail.html', {
         'product': product,
-        'can_manage': can_manage_products(request.user),
+        'can_manage': True,
     })
 
-@user_passes_test(can_manage_products, login_url='accounts:login')
+@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.COOPERATIVE_MANAGER)
 def product_create(request):
+    cooperative = user_cooperative(request.user) if is_manager(request.user) else None
     if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES)
+        form = ProductForm(request.POST, request.FILES, cooperative=cooperative)
         if form.is_valid():
             product = form.save()
             messages.success(request, 'Produit publie avec succes.')
             return redirect(product)
     else:
-        form = ProductForm()
+        form = ProductForm(cooperative=cooperative)
     return render(request, 'products/product_form.html', {
         'form': form,
         'title': 'Publier un produit',
         'submit_label': 'Publier',
     })
 
-@user_passes_test(can_manage_products, login_url='accounts:login')
+@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.COOPERATIVE_MANAGER)
 def product_update(request, pk):
-    product = get_object_or_404(Product, pk=pk)
+    products = Product.objects.all()
+    if is_manager(request.user):
+        products = products.filter(cooperative=user_cooperative(request.user))
+    product = get_object_or_404(products, pk=pk)
+    cooperative = user_cooperative(request.user) if is_manager(request.user) else None
     if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES, instance=product)
+        form = ProductForm(
+            request.POST,
+            request.FILES,
+            instance=product,
+            cooperative=cooperative,
+        )
         if form.is_valid():
             product = form.save()
             messages.success(request, 'Produit modifie avec succes.')
             return redirect(product)
     else:
-        form = ProductForm(instance=product)
+        form = ProductForm(instance=product, cooperative=cooperative)
     return render(request, 'products/product_form.html', {
         'form': form,
         'title': 'Modifier le produit',
@@ -70,9 +96,12 @@ def product_update(request, pk):
         'product': product,
     })
 
-@user_passes_test(can_manage_products, login_url='accounts:login')
+@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.COOPERATIVE_MANAGER)
 def product_delete(request, pk):
-    product = get_object_or_404(Product, pk=pk)
+    products = Product.objects.all()
+    if is_manager(request.user):
+        products = products.filter(cooperative=user_cooperative(request.user))
+    product = get_object_or_404(products, pk=pk)
     if request.method == 'POST':
         product.delete()
         messages.success(request, 'Produit supprime avec succes.')

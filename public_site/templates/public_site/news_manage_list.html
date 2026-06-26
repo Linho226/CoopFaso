@@ -1,0 +1,49 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-1">Gestion des actualites</h1>
+      <p class="text-muted mb-0">Redigez, programmez et publiez les informations visibles sur le site public.</p>
+    </div>
+    <a class="btn btn-success" href="{% url 'public_site:news_manage_create' %}">Ajouter une actualite</a>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3"><div class="dashboard-panel p-3"><small class="text-muted">Total</small><strong class="d-block fs-3">{{ news_items|length }}</strong></div></div>
+    <div class="col-sm-6 col-lg-3"><div class="dashboard-panel p-3"><small class="text-muted">Publiees</small><strong class="d-block fs-3 text-success">{{ published_count }}</strong></div></div>
+    <div class="col-sm-6 col-lg-3"><div class="dashboard-panel p-3"><small class="text-muted">Brouillons</small><strong class="d-block fs-3 text-warning">{{ draft_count }}</strong></div></div>
+    <div class="col-lg-3"><form method="get" class="dashboard-panel p-2"><input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Rechercher une actualite"></form></div>
+  </div>
+
+  <div class="table-responsive table-panel">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr><th>Actualite</th><th>Date</th><th>Statut</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for item in news_items %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-3">
+                {% if item.image %}<img class="news-admin-thumb" src="{{ item.image.url }}" alt="">{% else %}<span class="news-admin-placeholder">AC</span>{% endif %}
+                <div><strong>{{ item.title }}</strong><small class="d-block text-muted">{{ item.summary|truncatewords:14 }}</small></div>
+              </div>
+            </td>
+            <td>{{ item.published_at|date:'d/m/Y H:i' }}</td>
+            <td>{% if item.is_published %}<span class="status-pill status-paid">Publiee</span>{% else %}<span class="status-pill">Brouillon</span>{% endif %}</td>
+            <td class="text-end">
+              <div class="d-inline-flex gap-2">
+                {% if item.is_published %}<a class="btn btn-sm btn-outline-secondary" href="{{ item.get_absolute_url }}">Voir</a>{% endif %}
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'public_site:news_manage_update' item.pk %}">Modifier</a>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'public_site:news_manage_delete' item.pk %}">Supprimer</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-center text-muted py-5">Aucune actualite. Commencez par en ajouter une.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends 'public_site/base.html' %}
+{% block title %}Cooperatives · CoopFaso{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="public-container"><span class="eyebrow">Ancrage local</span><h1>Les cooperatives</h1><p>Decouvrez les organisations qui structurent et valorisent la production agricole locale.</p></div></section>
+<section class="public-section"><div class="public-container">
+  <form class="filter-bar compact" method="get"><select name="region"><option value="">Toutes les regions</option>{% for region in regions %}<option value="{{ region }}" {% if selected_region == region %}selected{% endif %}>{{ region }}</option>{% endfor %}</select><button class="btn btn-primary">Filtrer</button></form>
+  <div class="card-grid cooperative-page-grid">{% for cooperative in cooperatives %}<article class="cooperative-profile"><div class="cooperative-logo large">{% if cooperative.logo %}<img src="{{ cooperative.logo.url }}" alt="">{% else %}{{ cooperative.name|slice:":2"|upper }}{% endif %}</div><span>{{ cooperative.region }} · {{ cooperative.province }}</span><h2>{{ cooperative.name }}</h2><p>{{ cooperative.description|default:"Cooperative agricole engagee dans la valorisation des productions locales."|truncatewords:28 }}</p><a class="btn btn-outline" href="{% url 'public_site:cooperative_detail' cooperative.pk %}">Voir la cooperative</a></article>{% empty %}<div class="empty-state">Aucune cooperative publique.</div>{% endfor %}</div>
+</div></section>
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends 'public_site/base.html' %}
+
+{% block title %}Contact · CoopFaso{% endblock %}
+
+{% block content %}
+
+<!-- ============================= -->
+<!-- HERO CONTACT -->
+<!-- ============================= -->
+<section class="contact-hero">
+    <div class="public-container contact-hero-content">
+
+        <span class="eyebrow">Parlons-nous</span>
+
+        <h1>Contactez CoopFaso</h1>
+
+        <p>
+            Vous avez une question, une proposition de partenariat, un besoin de formation
+            ou souhaitez rejoindre la plateforme ? Notre équipe vous répond rapidement.
+        </p>
+
+        <div class="contact-hero-actions">
+            <a href="#contact-form" class="btn btn-primary">
+                Envoyer un message
+            </a>
+
+            {% if platform.phone %}
+                <a href="tel:{{ platform.phone }}" class="btn btn-outline">
+                    Appeler maintenant
+                </a>
+            {% endif %}
+        </div>
+
+    </div>
+</section>
+
+
+<!-- ============================= -->
+<!-- SECTION INFORMATIONS + FORMULAIRE -->
+<!-- ============================= -->
+<section class="public-section contact-section">
+    <div class="public-container contact-layout">
+
+        <!-- CARTE INFORMATIONS -->
+        <div class="contact-info-card">
+
+            <div class="contact-card-header">
+                <span class="contact-icon">CF</span>
+
+                <div>
+                    <h2>Informations de la plateforme</h2>
+
+                    <p>
+                        {{ platform.presentation|default:"CoopFaso valorise les produits agricoles locaux, facilite leur commercialisation et accompagne les coopératives avec des formations pratiques." }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="contact-items">
+
+                <div class="contact-item">
+                    <span>Adresse</span>
+                    <strong>
+                        {{ platform.address|default:"Ouagadougou, Burkina Faso" }}
+                    </strong>
+                </div>
+
+                <div class="contact-item">
+                    <span>Téléphone</span>
+                    <strong>
+                        {% if platform.phone %}
+                            <a href="tel:{{ platform.phone }}">{{ platform.phone }}</a>
+                        {% else %}
+                            À renseigner dans l'administration
+                        {% endif %}
+                    </strong>
+                </div>
+
+                <div class="contact-item">
+                    <span>Email</span>
+                    <strong>
+                        {% if platform.email %}
+                            <a href="mailto:{{ platform.email }}">{{ platform.email }}</a>
+                        {% else %}
+                            À renseigner dans l'administration
+                        {% endif %}
+                    </strong>
+                </div>
+
+                <div class="contact-item">
+                    <span>Disponibilité</span>
+                    <strong>Lundi au samedi · 08h00 - 17h30</strong>
+                </div>
+
+            </div>
+
+            <div class="contact-highlight">
+                <h3>Pourquoi nous écrire ?</h3>
+
+                <ul>
+                    <li>Demande d’information sur les produits agricoles</li>
+                    <li>Inscription ou accompagnement d’une coopérative</li>
+                    <li>Partenariat commercial ou institutionnel</li>
+                    <li>Formation, assistance ou support utilisateur</li>
+                </ul>
+            </div>
+
+        </div>
+
+
+        <!-- FORMULAIRE CONTACT -->
+        <form id="contact-form" class="contact-form" method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="form-header">
+                <span class="eyebrow">Message</span>
+
+                <h2>Envoyer un message</h2>
+
+                <p>
+                    Remplissez le formulaire ci-dessous. Nous reviendrons vers vous
+                    dans les meilleurs délais.
+                </p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="form-alert form-alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% if form.non_field_errors %}
+                <div class="form-alert form-alert-error">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="form-grid">
+
+                {% for field in form %}
+                    <div class="form-group field-{{ field.name }} {% if field.name == 'message' %}full-width{% endif %} {% if field.errors %}has-error{% endif %}">
+
+                        <label for="{{ field.id_for_label }}">
+                            {{ field.label }}
+
+                            {% if field.field.required %}
+                                <span>*</span>
+                            {% endif %}
+                        </label>
+
+                        {{ field }}
+
+                        {% if field.help_text %}
+                            <small class="field-help">
+                                {{ field.help_text }}
+                            </small>
+                        {% endif %}
+
+                        {% for error in field.errors %}
+                            <small class="field-error">
+                                {{ error }}
+                            </small>
+                        {% endfor %}
+
+                    </div>
+                {% endfor %}
+
+            </div>
+
+            <button class="btn btn-primary btn-large contact-submit" type="submit">
+                Envoyer le message
+            </button>
+
+            <p class="form-note">
+                Vos informations sont utilisées uniquement pour traiter votre demande.
+            </p>
+
+        </form>
+
+    </div>
+</section>
+
+
+<!-- ============================= -->
+<!-- SECTION LOCALISATION -->
+<!-- ============================= -->
+<section class="public-section contact-map-section">
+    <div class="public-container">
+
+        <div class="contact-map-card">
+
+            <div class="contact-map-content">
+                <span class="eyebrow">Localisation</span>
+
+                <h2>Nous sommes basés à Ouagadougou</h2>
+
+                <p>
+                    CoopFaso accompagne les acteurs agricoles, les coopératives,
+                    les producteurs, les transformateurs et les partenaires du secteur.
+                </p>
+            </div>
+
+            <div class="google-map-box">
+                <iframe
+                    src="https://www.google.com/maps?q=Ouagadougou,%20Burkina%20Faso&output=embed"
+                    width="100%"
+                    height="100%"
+                    style="border:0;"
+                    allowfullscreen=""
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

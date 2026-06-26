@@ -1,0 +1,27 @@
+{% extends base_template %}
+
+{% block content %}
+<div class="py-5 buyer-public-page">
+  <div class="auth-shell mx-auto" style="max-width: 760px;">
+    <div class="auth-card">
+      <h1 class="h3 fw-bold">Paiement de {{ order.reference }}</h1>
+      <p class="text-muted">Simulation securisee — aucun debit reel ne sera effectue.</p>
+      <div class="p-3 bg-light rounded-4 d-flex justify-content-between mb-4">
+        <span>Montant a payer</span><strong class="text-success fs-5">{{ order.total_amount }} FCFA</strong>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+          <div class="mb-3">
+            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+          </div>
+        {% endfor %}
+        <div class="alert alert-info small">Orange Money, Wave et la carte sont simules dans cette version de demonstration.</div>
+        <button class="btn btn-success w-100" type="submit">Simuler le paiement</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

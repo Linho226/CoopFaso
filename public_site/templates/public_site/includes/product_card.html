@@ -1,0 +1,12 @@
+<article class="product-card">
+  <a class="product-image" href="{% url 'public_site:product_detail' product.pk %}">
+    {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% else %}<span>{{ product.name|slice:":2"|upper }}</span>{% endif %}
+    {% if product.category %}<em>{{ product.category.name }}</em>{% endif %}
+  </a>
+  <div class="product-body">
+    <small>{{ product.cooperative.name }} · {{ product.cooperative.region }}</small>
+    <h3><a href="{% url 'public_site:product_detail' product.pk %}">{{ product.name }}</a></h3>
+    <p>{{ product.description|default:"Produit agricole local."|truncatewords:14 }}</p>
+    <div class="product-meta"><strong>{{ product.price|floatformat:"0" }} FCFA</strong><span>{{ product.quantity_available|floatformat:"-2" }} disponibles</span></div>
+  </div>
+</article>

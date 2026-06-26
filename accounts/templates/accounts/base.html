@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CoopFaso</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-  <link rel="stylesheet" href="{% static 'css/accounts.css' %}?v=3">
-  <link rel="stylesheet" href="{% static 'css/layout.css' %}?v=1">
+  <link rel="stylesheet" href="{% static 'css/accounts.css' %}?v=4">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}?v=5">
 </head>
 <body>
   {% if user.is_authenticated %}
@@ -19,45 +19,115 @@
         </a>
 
         <nav class="sidebar-nav" aria-label="Navigation principale">
-          <a class="sidebar-link" href="{% url 'accounts:dashboard' %}">
-            <span class="sidebar-icon">TB</span>
-            <span>Tableau de bord</span>
-          </a>
-          <a class="sidebar-link" href="{% url 'cooperatives:list' %}">
-            <span class="sidebar-icon">CO</span>
-            <span>Cooperatives</span>
-          </a>
-          <a class="sidebar-link" href="{% url 'members:list' %}">
-            <span class="sidebar-icon">ME</span>
-            <span>Membres</span>
-          </a>
-          <a class="sidebar-link" href="{% url 'products:list' %}">
-            <span class="sidebar-icon">PD</span>
-            <span>Produits</span>
-          </a>
-          <a class="sidebar-link" href="{% url 'productions:list' %}">
-            <span class="sidebar-icon">PR</span>
-            <span>Productions</span>
-          </a>
-          {% if user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' %}
-            <a class="sidebar-link" href="{% url 'accounts:user_roles' %}">
-              <span class="sidebar-icon">RO</span>
-              <span>Roles</span>
+          <div class="sidebar-group">
+            <div class="sidebar-group-label">Vue d'ensemble</div>
+            <a class="sidebar-link {% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'accounts:dashboard' %}">
+              <span class="sidebar-icon">⌂</span>
+              <span>Tableau de bord</span>
             </a>
-            <a class="sidebar-link" href="{% url 'admin:index' %}">
-              <span class="sidebar-icon">AD</span>
-              <span>Admin Django</span>
-            </a>
+          </div>
+
+          {% if user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' or user.profile.role == 'COOPERATIVE_MANAGER' or user.profile.role == 'FARMER' %}
+            <div class="sidebar-group">
+              <div class="sidebar-group-label">Gestion agricole</div>
+              {% if user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' %}
+                <a class="sidebar-link {% if request.resolver_match.namespace == 'cooperatives' %}is-active{% endif %}" href="{% url 'cooperatives:list' %}">
+                  <span class="sidebar-icon">C</span><span>Cooperatives</span>
+                </a>
+              {% endif %}
+              {% if user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' or user.profile.role == 'COOPERATIVE_MANAGER' %}
+                <a class="sidebar-link {% if request.resolver_match.namespace == 'members' %}is-active{% endif %}" href="{% url 'members:list' %}">
+                  <span class="sidebar-icon">M</span><span>Membres</span>
+                </a>
+              {% endif %}
+              <a class="sidebar-link {% if request.resolver_match.namespace == 'productions' %}is-active{% endif %}" href="{% url 'productions:list' %}">
+                <span class="sidebar-icon">P</span><span>{% if not user.is_staff and not user.is_superuser and user.profile.role == 'FARMER' %}Mes productions{% else %}Productions{% endif %}</span>
+              </a>
+              {% if user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' or user.profile.role == 'COOPERATIVE_MANAGER' %}
+                <a class="sidebar-link {% if request.resolver_match.namespace == 'products' %}is-active{% endif %}" href="{% url 'products:list' %}">
+                  <span class="sidebar-icon">▦</span><span>Produits</span>
+                </a>
+              {% endif %}
+            </div>
           {% endif %}
+
+          {% if user.profile.role == 'BUYER' %}
+            <div class="sidebar-group">
+              <div class="sidebar-group-label">Achats</div>
+              <a class="sidebar-link" href="{% url 'public_site:products' %}">
+                <span class="sidebar-icon">▦</span><span>Catalogue</span>
+              </a>
+              <a class="sidebar-link {% if request.resolver_match.url_name == 'cart' %}is-active{% endif %}" href="{% url 'sales:cart' %}">
+                <span class="sidebar-icon">♧</span><span>Panier</span>
+                {% if cart_count %}<span class="sidebar-count">{{ cart_count }}</span>{% endif %}
+              </a>
+              <a class="sidebar-link {% if request.resolver_match.namespace == 'sales' and request.resolver_match.url_name != 'cart' %}is-active{% endif %}" href="{% url 'sales:order_list' %}">
+                <span class="sidebar-icon">✓</span><span>Mes commandes</span>
+              </a>
+              <a class="sidebar-link {% if request.resolver_match.namespace == 'payments' %}is-active{% endif %}" href="{% url 'payments:history' %}">
+                <span class="sidebar-icon">₣</span><span>Paiements</span>
+              </a>
+            </div>
+          {% elif user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' or user.profile.role == 'COOPERATIVE_MANAGER' %}
+            <div class="sidebar-group">
+              <div class="sidebar-group-label">Suivi commercial</div>
+              {% if user.profile.role == 'COOPERATIVE_MANAGER' %}
+                <a class="sidebar-link {% if request.resolver_match.namespace == 'sales' %}is-active{% endif %}" href="{% url 'sales:order_list' %}">
+                  <span class="sidebar-icon">✓</span><span>Commandes</span>
+                </a>
+              {% endif %}
+              <a class="sidebar-link {% if request.resolver_match.namespace == 'payments' %}is-active{% endif %}" href="{% url 'payments:history' %}">
+                <span class="sidebar-icon">₣</span><span>Paiements</span>
+              </a>
+            </div>
+          {% endif %}
+
+          {% if user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' or user.profile.role == 'FARMER' %}
+            <div class="sidebar-group">
+              <div class="sidebar-group-label">Ressources</div>
+              <a class="sidebar-link {% if request.resolver_match.namespace == 'training' %}is-active{% endif %}" href="{% url 'training:list' %}">
+                <span class="sidebar-icon">▶</span><span>Formations</span>
+              </a>
+            </div>
+          {% endif %}
+
+          {% if user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' %}
+            <div class="sidebar-group">
+              <div class="sidebar-group-label">Administration</div>
+              <a class="sidebar-link {% if request.resolver_match.namespace == 'accounts' and request.resolver_match.url_name != 'dashboard' %}is-active{% endif %}" href="{% url 'accounts:user_roles' %}">
+                <span class="sidebar-icon">R</span>
+                <span>Roles utilisateurs</span>
+              </a>
+              <a class="sidebar-link {% if request.resolver_match.url_name == 'message_inbox' or request.resolver_match.url_name == 'message_manage' %}is-active{% endif %}" href="{% url 'accounts:message_inbox' %}">
+                <span class="sidebar-icon">✉</span>
+                <span>Messages recus</span>
+              </a>
+              <a class="sidebar-link {% if request.resolver_match.url_name == 'news_manage_list' or request.resolver_match.url_name == 'news_manage_create' or request.resolver_match.url_name == 'news_manage_update' or request.resolver_match.url_name == 'news_manage_delete' %}is-active{% endif %}" href="{% url 'public_site:news_manage_list' %}">
+                <span class="sidebar-icon">N</span>
+                <span>Actualites</span>
+              </a>
+            </div>
+          {% endif %}
+          <div class="sidebar-group">
+            <div class="sidebar-group-label">Compte</div>
+            <a class="sidebar-link {% if request.resolver_match.url_name == 'my_messages' or request.resolver_match.url_name == 'my_message_detail' %}is-active{% endif %}" href="{% url 'accounts:my_messages' %}">
+              <span class="sidebar-icon">✉</span><span>Mes messages</span>
+            </a>
+            <a class="sidebar-link {% if request.resolver_match.url_name == 'profile' %}is-active{% endif %}" href="{% url 'accounts:profile' %}">
+              <span class="sidebar-icon">U</span><span>Mon profil</span>
+            </a>
+          </div>
         </nav>
 
         <div class="sidebar-user">
-          <div class="small text-white-50">Connecte</div>
-          <div class="fw-bold text-white text-truncate">{{ user.get_full_name|default:user.username }}</div>
-          <div class="sidebar-role text-truncate">{{ user.profile.get_role_display|default:'Utilisateur' }}</div>
-          <form method="post" action="{% url 'accounts:logout' %}" class="mt-3">
+          <div class="sidebar-avatar">{{ user.username|slice:":1"|upper }}</div>
+          <div class="sidebar-user-copy">
+            <div class="fw-bold text-white text-truncate">{{ user.get_full_name|default:user.username }}</div>
+            <div class="sidebar-role text-truncate">{% if user.is_superuser or user.is_staff %}Administrateur{% else %}{{ user.profile.get_role_display|default:'Utilisateur' }}{% endif %}</div>
+          </div>
+          <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
-            <button class="btn btn-light w-100" type="submit">Deconnexion</button>
+            <button class="sidebar-logout" type="submit" title="Se deconnecter" aria-label="Se deconnecter">↪</button>
           </form>
         </div>
       </aside>
@@ -68,7 +138,7 @@
             <div class="small text-muted">Plateforme de gestion</div>
             <h1 class="h5 mb-0 fw-bold">CoopFaso</h1>
           </div>
-          <span class="role-chip">{{ user.profile.get_role_display|default:'Utilisateur' }}</span>
+          <span class="role-chip">{% if user.is_superuser or user.is_staff %}Administrateur{% else %}{{ user.profile.get_role_display|default:'Utilisateur' }}{% endif %}</span>
         </header>
         <main class="app-content">
   {% else %}
@@ -92,4 +162,3 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 </body>
 </html>
-

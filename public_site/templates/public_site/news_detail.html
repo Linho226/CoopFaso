@@ -1,0 +1,6 @@
+{% extends 'public_site/base.html' %}
+{% block title %}{{ item.title }} · CoopFaso{% endblock %}
+{% block content %}
+<section class="page-hero"><div class="public-container narrow"><span class="eyebrow">Actualite · {{ item.published_at|date:"d M Y" }}</span><h1>{{ item.title }}</h1><p>{{ item.summary }}</p></div></section>
+<section class="public-section"><div class="public-container narrow">{% if item.image %}<img class="article-cover" src="{{ item.image.url }}" alt="{{ item.title }}">{% endif %}<article class="article-content">{{ item.content|linebreaks }}</article></div></section>
+{% endblock %}

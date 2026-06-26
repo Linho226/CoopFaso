@@ -4,7 +4,6 @@
 <div class="py-5">
   <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
     <div>
-      <p class="auth-badge mb-2">Module 2</p>
       <h1 class="h3 fw-bold mb-1">Gestion des cooperatives</h1>
       <p class="text-muted mb-0">Consultez et administrez les cooperatives agricoles.</p>
     </div>
@@ -20,8 +19,9 @@
           <th>Nom</th>
           <th>Region</th>
           <th>Province</th>
-          <th>Telephone</th>
-          <th>Email</th>
+          <th>Responsable</th>
+          <th>Membres</th>
+          <th>Produits</th>
           <th class="text-end">Action</th>
         </tr>
       </thead>
@@ -31,15 +31,20 @@
             <td class="fw-semibold">{{ cooperative.name }}</td>
             <td>{{ cooperative.region }}</td>
             <td>{{ cooperative.province }}</td>
-            <td>{{ cooperative.phone }}</td>
-            <td>{{ cooperative.email }}</td>
+            <td>
+              {% with profile=cooperative.manager_profiles.0 %}
+                {% if profile %}{{ profile.user.get_full_name|default:profile.user.username }}{% else %}<span class="text-warning">Non assigne</span>{% endif %}
+              {% endwith %}
+            </td>
+            <td>{{ cooperative.member_count }}</td>
+            <td>{{ cooperative.product_count }}</td>
             <td class="text-end">
               <a class="btn btn-sm btn-outline-primary" href="{% url 'cooperatives:detail' cooperative.pk %}">Voir</a>
             </td>
           </tr>
         {% empty %}
           <tr>
-            <td colspan="6" class="text-center py-5 text-muted">Aucune cooperative enregistree.</td>
+            <td colspan="7" class="text-center py-5 text-muted">Aucune cooperative enregistree.</td>
           </tr>
         {% endfor %}
       </tbody>

@@ -1,0 +1,36 @@
+{% extends base_template %}
+
+{% block content %}
+<div class="py-5 buyer-public-page">
+  <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+    <div>
+      <p class="auth-badge mb-2">{{ contact_message.get_category_display }}</p>
+      <h1 class="h3 fw-bold mb-1">{{ contact_message.subject }}</h1>
+      <p class="text-muted mb-0">Envoye le {{ contact_message.created_at|date:'d/m/Y a H:i' }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'accounts:my_messages' %}">Retour</a>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="dashboard-panel p-4 h-100">
+        <h2 class="h5 fw-bold">Votre message</h2>
+        <p class="mb-0">{{ contact_message.message|linebreaksbr }}</p>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="dashboard-panel p-4 h-100">
+        <div class="d-flex justify-content-between gap-3 mb-3">
+          <h2 class="h5 fw-bold mb-0">Reponse de CoopFaso</h2>
+          <span class="role-chip">{{ contact_message.get_status_display }}</span>
+        </div>
+        {% if contact_message.admin_reply %}
+          <p>{{ contact_message.admin_reply|linebreaksbr }}</p>
+          <small class="text-muted">Repondu le {{ contact_message.replied_at|date:'d/m/Y a H:i' }}</small>
+        {% else %}
+          <p class="text-muted mb-0">Votre demande est en attente de traitement.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -11,7 +11,7 @@ urlpatterns = [
     path('inscription/', views.SignUpView.as_view(), name='register'),
     path(
         'connexion/',
-        auth_views.LoginView.as_view(
+        views.RoleAwareLoginView.as_view(
             template_name='accounts/login.html',
             authentication_form=StyledAuthenticationForm,
         ),
@@ -49,4 +49,13 @@ urlpatterns = [
     ),
     path('utilisateurs/roles/', views.user_roles, name='user_roles'),
     path('utilisateurs/<int:user_id>/role/', views.update_user_role, name='update_user_role'),
+    path('profil/', views.profile, name='profile'),
+    path('messages/', views.my_messages, name='my_messages'),
+    path('messages/<int:pk>/', views.my_message_detail, name='my_message_detail'),
+    path('administration/messages/', views.message_inbox, name='message_inbox'),
+    path(
+        'administration/messages/<int:pk>/',
+        views.message_manage,
+        name='message_manage',
+    ),
 ]

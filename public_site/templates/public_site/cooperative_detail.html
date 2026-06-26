@@ -1,0 +1,8 @@
+{% extends 'public_site/base.html' %}
+{% block title %}{{ cooperative.name }} · CoopFaso{% endblock %}
+{% block content %}
+<section class="page-hero cooperative-hero"><div class="public-container cooperative-title"><div class="cooperative-logo xlarge">{% if cooperative.logo %}<img src="{{ cooperative.logo.url }}" alt="">{% else %}{{ cooperative.name|slice:":2"|upper }}{% endif %}</div><div><span class="eyebrow">{{ cooperative.region }} · {{ cooperative.province }}</span><h1>{{ cooperative.name }}</h1><p>{{ cooperative.description|default:"Cooperative agricole partenaire de CoopFaso." }}</p></div></div></section>
+<section class="public-section"><div class="public-container info-grid"><div class="info-card"><span>Adresse</span><strong>{{ cooperative.address }}</strong></div><div class="info-card"><span>Telephone</span><strong>{{ cooperative.phone }}</strong></div><div class="info-card"><span>Email</span><strong>{{ cooperative.email }}</strong></div><div class="info-card"><span>Creation</span><strong>{{ cooperative.creation_date|date:"Y" }}</strong></div></div>
+{% if cooperative.location_url %}<a class="btn btn-outline location-button" href="{{ cooperative.location_url }}" target="_blank" rel="noopener">Voir la localisation</a>{% endif %}
+<div class="section-heading top-gap"><div><span class="eyebrow">Catalogue</span><h2>Produits de la cooperative</h2></div></div><div class="card-grid product-grid">{% for product in products %}{% include 'public_site/includes/product_card.html' %}{% empty %}<div class="empty-state">Aucun produit public disponible.</div>{% endfor %}</div></div></section>
+{% endblock %}

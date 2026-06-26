@@ -1,0 +1,32 @@
+{% extends base_template %}
+
+{% block content %}
+<div class="py-5 buyer-public-page">
+  <div class="d-flex justify-content-between align-items-center gap-3 mb-4">
+    <div>
+      <h1 class="h3 fw-bold mb-1">{% if is_manager %}Commandes de la cooperative{% else %}Historique des commandes{% endif %}</h1>
+      <p class="text-muted mb-0">{% if is_manager %}Consultez les commandes contenant vos produits.{% else %}Suivez vos achats et leur statut.{% endif %}</p>
+    </div>
+    {% if is_buyer %}<a class="btn btn-success" href="{% url 'public_site:products' %}">Nouvel achat</a>{% endif %}
+  </div>
+  <div class="table-responsive table-panel">
+    <table class="table table-hover align-middle mb-0">
+      <thead class="table-light"><tr><th>Reference</th><th>Date</th><th>Articles</th><th>Total</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        {% for order in orders %}
+          <tr>
+            <td class="fw-bold">{{ order.reference }}</td>
+            <td>{{ order.created_at|date:'d/m/Y H:i' }}</td>
+            <td>{% if is_manager %}{{ order.visible_items|length }}{% else %}{{ order.items.count }}{% endif %}</td>
+            <td class="text-success fw-bold">{% if is_manager %}{{ order.visible_total }}{% else %}{{ order.total_amount }}{% endif %} FCFA</td>
+            <td><span class="status-pill status-{{ order.status|lower }}">{{ order.get_status_display }}</span></td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ order.get_absolute_url }}">Voir</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6" class="text-center text-muted py-5">Aucune commande pour le moment.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -25,7 +25,16 @@ SECRET_KEY = 'django-insecure-xxvgvbh4c6mf9+stow0)^uiqgkn%(y8(^fd1wqh4s$er^yk7xo
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '[::1]',
+    '.ngrok-free.app',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.ngrok-free.app',
+]
 
 
 # Application definition
@@ -36,6 +45,10 @@ INSTALLED_APPS = [
     'members',
     'products',
     'productions',
+    'sales',
+    'payments',
+    'training',
+    'public_site',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -66,6 +79,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'sales.cart.cart_count',
             ],
         },
     },
@@ -131,4 +145,3 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-

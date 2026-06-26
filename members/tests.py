@@ -19,6 +19,7 @@ class MemberTests(TestCase):
         )
         self.manager = User.objects.create_user(username="manager", password="Password123!")
         self.manager.profile.role = UserProfile.Role.COOPERATIVE_MANAGER
+        self.manager.profile.cooperative = self.cooperative
         self.manager.profile.save()
 
         self.farmer = User.objects.create_user(username="farmer", password="Password123!")
@@ -35,16 +36,32 @@ class MemberTests(TestCase):
             cooperative=self.cooperative,
             is_active=True,
         )
+        self.other_cooperative = Cooperative.objects.create(
+            name='Autre cooperative',
+            address='Bobo',
+            phone='+22670000009',
+            email='autre@coopfaso.bf',
+            region='Hauts-Bassins',
+            province='Houet',
+            creation_date=date(2026, 1, 2),
+        )
+        self.other_member = Member.objects.create(
+            last_name='Autre',
+            first_name='Membre',
+            gender=Member.Gender.FEMALE,
+            birth_date=date(1992, 1, 1),
+            phone='+22676000009',
+            address='Bobo',
+            cooperative=self.other_cooperative,
+        )
 
-    def test_authenticated_user_can_list_members(self):
+    def test_farmer_cannot_list_members(self):
         self.client.force_login(self.farmer)
         response = self.client.get(reverse('members:list'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Sawadogo")
-        self.assertContains(response, "Issa")
+        self.assertRedirects(response, reverse('accounts:dashboard'))
 
-    def test_member_search(self):
-        self.client.force_login(self.farmer)
+    def test_manager_can_search_own_members(self):
+        self.client.force_login(self.manager)
         # Search by name
         response = self.client.get(reverse('members:list') + '?q=Sawadogo')
         self.assertEqual(response.status_code, 200)
@@ -55,12 +72,36 @@ class MemberTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "Sawadogo")
 
-    def test_authenticated_user_can_view_member_detail(self):
+    def test_manager_never_sees_members_from_another_cooperative(self):
+        self.client.force_login(self.manager)
+
+        response = self.client.get(reverse('members:list'))
+
+        self.assertContains(response, 'Sawadogo')
+        self.assertNotContains(response, 'Autre cooperative')
+        self.assertNotContains(response, '+22676000009')
+
+    def test_admin_can_filter_members_by_cooperative(self):
+        admin = User.objects.create_user(
+            username='members_admin',
+            password='Password123!',
+            is_staff=True,
+        )
+        self.client.force_login(admin)
+
+        response = self.client.get(
+            reverse('members:list'),
+            {'cooperative': self.other_cooperative.pk},
+        )
+
+        self.assertContains(response, 'Autre cooperative')
+        self.assertContains(response, 'Membre')
+        self.assertNotContains(response, 'Sawadogo')
+
+    def test_farmer_cannot_view_member_detail(self):
         self.client.force_login(self.farmer)
         response = self.client.get(reverse('members:detail', args=[self.member.pk]))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Sawadogo")
-        self.assertContains(response, "Issa")
+        self.assertRedirects(response, reverse('accounts:dashboard'))
 
     def test_manager_can_create_member(self):
         self.client.force_login(self.manager)

@@ -3,64 +3,43 @@
 {% block content %}
 <div class="py-5">
   <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
-    <div>
-      <p class="auth-badge mb-2">Module 5</p>
-      <h1 class="h3 fw-bold mb-1">Catalogue des Produits</h1>
-      <p class="text-muted mb-0">Consultez, publiez et gerez le catalogue de produits agricoles.</p>
-    </div>
-    {% if can_manage %}
-      <a class="btn btn-success" href="{% url 'products:create' %}">Publier un produit</a>
-    {% endif %}
+    <div><h1 class="h3 fw-bold mb-1">Gestion des produits et des stocks</h1><p class="text-muted mb-0">Chaque produit et son stock sont rattaches a une cooperative.</p></div>
+    <a class="btn btn-success" href="{% url 'products:create' %}">Publier un produit</a>
   </div>
-
   <form method="get" class="dashboard-panel p-3 mb-4">
     <div class="row g-2 align-items-center">
-      <div class="col-lg-10">
-        <input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Rechercher par nom de produit ou cooperative">
-      </div>
-      <div class="col-lg-2 d-grid">
-        <button class="btn btn-success" type="submit">Rechercher</button>
-      </div>
+      <div class="{% if is_manager_view %}col-lg-10{% else %}col-lg-7{% endif %}"><input class="form-control" type="search" name="q" value="{{ query }}" placeholder="Rechercher par nom de produit"></div>
+      {% if not is_manager_view %}<div class="col-lg-3"><select class="form-select" name="cooperative"><option value="">Toutes les cooperatives</option>{% for cooperative in cooperatives %}<option value="{{ cooperative.pk }}" {% if selected_cooperative == cooperative.pk|stringformat:"s" %}selected{% endif %}>{{ cooperative.name }}</option>{% endfor %}</select></div>{% endif %}
+      <div class="col-lg-2 d-grid"><button class="btn btn-success" type="submit">Filtrer</button></div>
     </div>
   </form>
-
-  <div class="row g-4">
-    {% for product in products %}
-      <div class="col-md-6 col-lg-4">
-        <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden">
-          {% if product.image %}
-            <img src="{{ product.image.url }}" class="card-img-top object-fit-cover" alt="{{ product.name }}" style="height: 200px;">
-          {% else %}
-            <div class="bg-light d-flex align-items-center justify-content-center text-muted" style="height: 200px;">
-              <span class="fs-4 fw-semibold text-uppercase">{{ product.name|slice:":2" }}</span>
-            </div>
-          {% endif %}
-          <div class="card-body p-4 d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <h5 class="card-title fw-bold mb-0">{{ product.name }}</h5>
-              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">{{ product.price }} FCFA</span>
-            </div>
-            <p class="text-muted small mb-1">Cooperative : <strong>{{ product.cooperative.name }}</strong></p>
-            <p class="card-text text-secondary text-truncate-2 mb-4">{{ product.description|default:"Aucune description." }}</p>
-            <div class="mt-auto d-flex justify-content-between align-items-center">
-              <div>
-                <span class="small text-muted d-block">Stock disponible</span>
-                <span class="fw-bold {% if product.quantity_available > 0 %}text-primary{% else %}text-danger{% endif %}">
-                  {{ product.quantity_available }} unites
-                </span>
+  <div class="cooperative-product-groups">
+    {% for cooperative in cooperative_groups %}
+      {% if cooperative.filtered_products %}
+        <section class="dashboard-panel cooperative-product-group">
+          <header>
+            <div><span class="cooperative-group-mark">{{ cooperative.name|slice:":2"|upper }}</span><div><h2>{{ cooperative.name }}</h2><p>{{ cooperative.region }} · {{ cooperative.filtered_products|length }} produit{{ cooperative.filtered_products|length|pluralize }}</p></div></div>
+            <div class="stock-group-total"><small>Stock cumule</small><strong>{{ cooperative.stock_total|default:0|floatformat:"-2" }}</strong></div>
+          </header>
+          <div class="row g-4 p-3">
+            {% for product in cooperative.filtered_products %}
+              <div class="col-md-6 col-xl-4">
+                <article class="internal-product-card">
+                  {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% else %}<div class="internal-product-placeholder">{{ product.name|slice:":2"|upper }}</div>{% endif %}
+                  <div class="internal-product-copy">
+                    <div><h3>{{ product.name }}</h3><span>{{ product.price|floatformat:"0" }} FCFA</span></div>
+                    <p>{{ product.description|default:"Aucune description."|truncatewords:14 }}</p>
+                    <div class="stock-line"><div><small>Stock disponible</small><strong class="{% if product.quantity_available <= 10 %}text-warning{% else %}text-success{% endif %}">{{ product.quantity_available|floatformat:"-2" }} unites</strong></div>{% if product.is_published %}<em>Publie</em>{% else %}<em class="draft">Brouillon</em>{% endif %}</div>
+                    <a class="btn btn-outline-primary btn-sm w-100" href="{% url 'products:detail' product.pk %}">Voir et modifier</a>
+                  </div>
+                </article>
               </div>
-              <a href="{% url 'products:detail' product.pk %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">Details</a>
-            </div>
+            {% endfor %}
           </div>
-        </div>
-      </div>
-    {% empty %}
-      <div class="col-12">
-        <div class="dashboard-panel text-center py-5 text-muted">
-          Aucun produit trouve dans le catalogue.
-        </div>
-      </div>
+        </section>
+      {% endif %}
     {% endfor %}
+    {% if not products %}<div class="dashboard-panel text-center py-5 text-muted">Aucun produit ne correspond aux filtres.</div>{% endif %}
   </div>
 </div>
 {% endblock %}

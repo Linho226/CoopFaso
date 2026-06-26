@@ -31,7 +31,13 @@ class MemberForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        cooperative = kwargs.pop('cooperative', None)
         super().__init__(*args, **kwargs)
+        if cooperative:
+            self.fields['cooperative'].initial = cooperative
+            self.fields['cooperative'].queryset = self.fields[
+                'cooperative'
+            ].queryset.filter(pk=cooperative.pk)
         for field in self.fields.values():
             if isinstance(field.widget, forms.Select):
                 field.widget.attrs.setdefault('class', 'form-select')

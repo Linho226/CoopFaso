@@ -1,0 +1,32 @@
+{% extends base_template %}
+
+{% block content %}
+<div class="py-5 receipt-page buyer-public-page">
+  <div class="d-flex justify-content-between mb-4 no-print">
+    <a class="btn btn-outline-secondary" href="{% url 'payments:history' %}">Retour</a>
+    <button class="btn btn-success" type="button" onclick="window.print()">Imprimer le recu</button>
+  </div>
+  <div class="receipt-card mx-auto">
+    <div class="receipt-header">
+      <div><span class="brand-mark">CF</span><strong class="ms-2 fs-4">CoopFaso</strong></div>
+      <div class="text-end"><div class="small">RECU DE PAIEMENT</div><strong>{{ payment.reference }}</strong></div>
+    </div>
+    <div class="row g-3 my-4">
+      <div class="col-sm-6"><div class="small text-muted">Client</div><strong>{{ payment.order.customer.get_full_name|default:payment.order.customer.username }}</strong></div>
+      <div class="col-sm-6 text-sm-end"><div class="small text-muted">Date</div><strong>{{ payment.paid_at|date:'d/m/Y H:i' }}</strong></div>
+      <div class="col-sm-6"><div class="small text-muted">Commande</div><strong>{{ payment.order.reference }}</strong></div>
+      <div class="col-sm-6 text-sm-end"><div class="small text-muted">Mode</div><strong>{{ payment.get_method_display }}</strong></div>
+    </div>
+    <table class="table">
+      <thead><tr><th>Produit</th><th>Qte</th><th class="text-end">Montant</th></tr></thead>
+      <tbody>
+        {% for item in items %}
+          <tr><td>{{ item.product_name }}</td><td>{{ item.quantity }}</td><td class="text-end">{{ item.subtotal }} FCFA</td></tr>
+        {% endfor %}
+      </tbody>
+      <tfoot><tr><th colspan="2">TOTAL PAYE</th><th class="text-end text-success fs-5">{{ visible_amount }} FCFA</th></tr></tfoot>
+    </table>
+    <div class="alert alert-success mt-4 mb-0">Paiement simule reussi — reference {{ payment.reference }}.</div>
+  </div>
+</div>
+{% endblock %}

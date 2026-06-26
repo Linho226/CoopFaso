@@ -1,0 +1,62 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+    <div>
+      <p class="auth-badge mb-2">{{ course.get_theme_display }}</p>
+      <h1 class="display-6 fw-bold mb-2">{{ course.title }}</h1>
+      <p class="lead text-muted mb-0">{{ course.summary }}</p>
+    </div>
+    <div class="d-flex gap-2 align-self-start">
+      <a class="btn btn-outline-secondary" href="{% url 'training:list' %}">Retour</a>
+      {% if can_manage %}<a class="btn btn-outline-primary" href="{% url 'training:update' course.pk %}">Modifier</a>{% endif %}
+    </div>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <article class="dashboard-panel p-4 p-lg-5 course-content">
+        {{ course.content|linebreaks }}
+      </article>
+      {% if course.video_url %}
+        <div class="dashboard-panel p-4 mt-4">
+          <h2 class="h5 fw-bold">Video du cours</h2>
+          <p class="text-muted">La video s’ouvre sur sa plateforme d’hebergement.</p>
+          <a class="btn btn-outline-primary" href="{{ course.video_url }}" target="_blank" rel="noopener">Regarder la video</a>
+        </div>
+      {% endif %}
+    </div>
+    <div class="col-lg-4">
+      <div class="dashboard-panel p-4 mb-4">
+        <h2 class="h5 fw-bold">Ressources</h2>
+        {% if course.document %}
+          <a class="btn btn-success w-100 mt-2" href="{{ course.document.url }}" download>Telecharger le document</a>
+        {% else %}
+          <p class="small text-muted mb-0">Aucun document joint.</p>
+        {% endif %}
+      </div>
+      {% if course.questions.exists %}
+        <div class="dashboard-panel p-4">
+          <h2 class="h5 fw-bold">Quiz d’evaluation</h2>
+          {% if latest_attempt %}<div class="alert alert-info small">Dernier score : {{ latest_attempt.score }}/{{ latest_attempt.total }} ({{ latest_attempt.percentage }} %)</div>{% endif %}
+          <form method="post" action="{% url 'training:quiz_submit' course.pk %}">
+            {% csrf_token %}
+            {% for question in course.questions.all %}
+              <fieldset class="mb-4">
+                <legend class="fs-6 fw-bold">{{ forloop.counter }}. {{ question.text }}</legend>
+                {% for choice in question.choices.all %}
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="question_{{ question.pk }}" id="choice_{{ choice.pk }}" value="{{ choice.pk }}" required>
+                    <label class="form-check-label" for="choice_{{ choice.pk }}">{{ choice.text }}</label>
+                  </div>
+                {% endfor %}
+              </fieldset>
+            {% endfor %}
+            <button class="btn btn-success w-100" type="submit">Valider mes reponses</button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

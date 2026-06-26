@@ -1,36 +1,45 @@
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Sum, F
 from django.shortcuts import get_object_or_404, redirect, render
+
+from accounts.access import (
+    is_admin,
+    is_farmer,
+    is_manager,
+    roles_required,
+    user_cooperative,
+    user_member,
+)
+from accounts.models import UserProfile
+from cooperatives.models import Cooperative
+
 from .forms import ProductionForm, FarmerProductionForm
 from .models import Production
-from members.models import Member
 
-def is_manager_or_admin(user):
-    if not user.is_authenticated:
-        return False
-    if user.is_superuser or user.is_staff:
-        return True
-    role = getattr(getattr(user, 'profile', None), 'role', None)
-    return role in {'ADMIN', 'COOPERATIVE_MANAGER'}
 
-@login_required
+@roles_required(
+    UserProfile.Role.ADMIN,
+    UserProfile.Role.COOPERATIVE_MANAGER,
+    UserProfile.Role.FARMER,
+)
 def production_list(request):
     user = request.user
-    role = getattr(getattr(user, 'profile', None), 'role', None)
-    
-    if user.is_superuser or user.is_staff or role == 'ADMIN':
+    selected_cooperative = request.GET.get('cooperative', '').strip()
+    if is_admin(user):
         productions = Production.objects.select_related('member', 'product', 'member__cooperative')
-    elif role == 'COOPERATIVE_MANAGER':
-        productions = Production.objects.select_related('member', 'product', 'member__cooperative')
+        if selected_cooperative:
+            productions = productions.filter(
+                member__cooperative_id=selected_cooperative
+            )
+    elif is_manager(user):
+        selected_cooperative = str(
+            getattr(user_cooperative(user), 'pk', '')
+        )
+        productions = Production.objects.filter(
+            member__cooperative=user_cooperative(user)
+        ).select_related('member', 'product', 'member__cooperative')
     else:
-        member = None
-        profile = getattr(user, 'profile', None)
-        if profile and profile.phone:
-            member = Member.objects.filter(phone=profile.phone).first()
-        if not member:
-            member = Member.objects.filter(first_name=user.first_name, last_name=user.last_name).first()
-            
+        member = user_member(user)
         if member:
             productions = Production.objects.filter(member=member).select_related('member', 'product')
         else:
@@ -38,34 +47,34 @@ def production_list(request):
 
     return render(request, 'productions/production_list.html', {
         'productions': productions,
-        'can_manage': is_manager_or_admin(user),
+        'cooperatives': Cooperative.objects.all(),
+        'selected_cooperative': selected_cooperative,
+        'is_admin_view': is_admin(user),
+        'can_manage': not is_farmer(user),
     })
 
-@login_required
+@roles_required(
+    UserProfile.Role.ADMIN,
+    UserProfile.Role.COOPERATIVE_MANAGER,
+    UserProfile.Role.FARMER,
+)
 def production_create(request):
     user = request.user
-    role = getattr(getattr(user, 'profile', None), 'role', None)
-    is_manager = user.is_superuser or user.is_staff or role in {'ADMIN', 'COOPERATIVE_MANAGER'}
-    
-    cooperative = None
-    member = None
-    profile = getattr(user, 'profile', None)
-    if profile and profile.phone:
-        member = Member.objects.filter(phone=profile.phone).first()
-    if not member:
-        member = Member.objects.filter(first_name=user.first_name, last_name=user.last_name).first()
-    if member:
+    can_manage = is_admin(user) or is_manager(user)
+    member = user_member(user)
+    cooperative = user_cooperative(user)
+    if is_farmer(user) and member:
         cooperative = member.cooperative
 
     if request.method == 'POST':
-        if is_manager:
+        if can_manage:
             form = ProductionForm(request.POST, cooperative=cooperative)
         else:
             form = FarmerProductionForm(request.POST, cooperative=cooperative)
             
         if form.is_valid():
             production = form.save(commit=False)
-            if not is_manager:
+            if not can_manage:
                 if not member:
                     messages.error(request, "Impossible de declarer une recolte : aucun profil membre trouve pour votre compte.")
                     return redirect('productions:list')
@@ -80,7 +89,7 @@ def production_create(request):
             messages.success(request, 'Recolte declaree avec succes.')
             return redirect('productions:list')
     else:
-        if is_manager:
+        if can_manage:
             form = ProductionForm(cooperative=cooperative)
         else:
             form = FarmerProductionForm(cooperative=cooperative)
@@ -91,29 +100,27 @@ def production_create(request):
         'submit_label': 'Declarer',
     })
 
-@login_required
+@roles_required(
+    UserProfile.Role.ADMIN,
+    UserProfile.Role.COOPERATIVE_MANAGER,
+    UserProfile.Role.FARMER,
+)
 def production_update(request, pk):
-    production = get_object_or_404(Production, pk=pk)
     user = request.user
-    role = getattr(getattr(user, 'profile', None), 'role', None)
-    is_manager = user.is_superuser or user.is_staff or role in {'ADMIN', 'COOPERATIVE_MANAGER'}
-    
-    member = None
-    profile = getattr(user, 'profile', None)
-    if profile and profile.phone:
-        member = Member.objects.filter(phone=profile.phone).first()
-    if not member:
-        member = Member.objects.filter(first_name=user.first_name, last_name=user.last_name).first()
-
-    if not is_manager and production.member != member:
-        messages.error(request, "Vous n'avez pas la permission de modifier cette production.")
-        return redirect('productions:list')
+    can_manage = is_admin(user) or is_manager(user)
+    productions = Production.objects.all()
+    member = user_member(user)
+    if is_manager(user):
+        productions = productions.filter(member__cooperative=user_cooperative(user))
+    elif is_farmer(user):
+        productions = productions.filter(member=member)
+    production = get_object_or_404(productions, pk=pk)
 
     old_quantity = production.quantity
     old_product = production.product
 
     if request.method == 'POST':
-        if is_manager:
+        if can_manage:
             form = ProductionForm(request.POST, instance=production, cooperative=production.member.cooperative)
         else:
             form = FarmerProductionForm(request.POST, instance=production, cooperative=production.member.cooperative)
@@ -131,7 +138,7 @@ def production_update(request, pk):
             messages.success(request, 'Production modifiee avec succes.')
             return redirect('productions:list')
     else:
-        if is_manager:
+        if can_manage:
             form = ProductionForm(instance=production, cooperative=production.member.cooperative)
         else:
             form = FarmerProductionForm(instance=production, cooperative=production.member.cooperative)
@@ -143,15 +150,19 @@ def production_update(request, pk):
         'production': production,
     })
 
-@login_required
-@user_passes_test(is_manager_or_admin, login_url='accounts:login')
+@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.COOPERATIVE_MANAGER)
 def production_stats(request):
-    totals = Production.objects.aggregate(
+    productions = Production.objects.all()
+    if is_manager(request.user):
+        productions = productions.filter(
+            member__cooperative=user_cooperative(request.user)
+        )
+    totals = productions.aggregate(
         total_qty=Sum('quantity'),
         total_val=Sum('estimated_price')
     )
     
-    by_product = Production.objects.values(
+    by_product = productions.values(
         'product__name'
     ).annotate(
         qty=Sum('quantity'),

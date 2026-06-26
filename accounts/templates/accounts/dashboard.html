@@ -1,18 +1,192 @@
 {% extends 'accounts/base.html' %}
 
 {% block content %}
-<div class="auth-wrap">
-  <div class="dashboard-panel p-4 p-lg-5">
-    <div class="d-flex flex-column flex-lg-row justify-content-between gap-4">
-      <div>
-        <p class="auth-badge mb-3">Tableau de bord</p>
-        <h1 class="display-6 fw-bold mb-2">Bienvenue, {{ user.get_full_name|default:user.username }}</h1>
-        <p class="text-muted mb-0">Votre espace CoopFaso est pret pour les prochains modules.</p>
-      </div>
-      <div class="align-self-start">
-        <span class="role-chip">{{ profile.get_role_display|default:'Non defini' }}</span>
-      </div>
+<div class="cf-analytics-dashboard">
+  <section class="analytics-hero">
+    <div>
+      <span class="analytics-kicker">Pilotage CoopFaso</span>
+      <h1>Bonjour, {{ user.get_full_name|default:user.username }}</h1>
+      {% if is_admin %}
+        <p>Suivez en temps reel les ventes, productions, utilisateurs et operations de la plateforme.</p>
+      {% elif is_manager %}
+        <p>Mesurez les performances commerciales et agricoles de votre cooperative.</p>
+      {% else %}
+        <p>Suivez vos recoltes, leur valeur estimee et votre progression agricole.</p>
+      {% endif %}
     </div>
-  </div>
+    <div class="analytics-hero-meta">
+      <span>{{ role_display }}</span>
+      <strong>{% now "d M Y" %}</strong>
+    </div>
+  </section>
+
+  {% if is_admin %}
+    <section class="analytics-kpi-grid">
+      <a class="analytics-kpi tone-indigo" href="{% url 'cooperatives:list' %}">
+        <span class="kpi-icon">CO</span><div><small>Cooperatives</small><strong>{{ cooperative_count }}</strong><em>{{ member_count }} membres actifs</em></div>
+      </a>
+      <a class="analytics-kpi tone-cyan" href="{% url 'accounts:user_roles' %}">
+        <span class="kpi-icon">UT</span><div><small>Utilisateurs</small><strong>{{ farmer_count|add:buyer_count }}</strong><em>{{ farmer_count }} agriculteurs · {{ buyer_count }} acheteurs</em></div>
+      </a>
+      <div class="analytics-kpi tone-green">
+        <span class="kpi-icon">RE</span><div><small>Revenus globaux</small><strong>{{ global_revenue|floatformat:"0" }}</strong><em>FCFA · {{ revenue_growth }} % ce mois</em></div>
+      </div>
+      <a class="analytics-kpi tone-amber" href="{% url 'productions:list' %}">
+        <span class="kpi-icon">PR</span><div><small>Production totale</small><strong>{{ global_production|floatformat:"-2" }}</strong><em>{{ production_growth }} % ce mois</em></div>
+      </a>
+      <a class="analytics-kpi tone-violet" href="{% url 'sales:order_list' %}">
+        <span class="kpi-icon">VE</span><div><small>Produits vendus</small><strong>{{ products_sold }}</strong><em>{{ order_count }} commandes</em></div>
+      </a>
+      <a class="analytics-kpi tone-rose" href="{% url 'accounts:message_inbox' %}">
+        <span class="kpi-icon">MS</span><div><small>Messages a traiter</small><strong>{{ new_message_count }}</strong><em>{{ low_stock_count }} alertes de stock</em></div>
+      </a>
+    </section>
+
+    <section class="analytics-grid analytics-grid-main">
+      <article class="analytics-card chart-card-wide">
+        <header class="analytics-card-head">
+          <div><span>Performance commerciale</span><h2>Revenus des 6 derniers mois</h2></div>
+          <div class="analytics-head-stat"><small>Ce mois</small><strong>{{ current_revenue|floatformat:"0" }} FCFA</strong></div>
+        </header>
+        <div class="vertical-chart">
+          {% for month in monthly_revenue %}
+            <div class="vertical-chart-item">
+              <span class="chart-value">{{ month.value|floatformat:"0" }}</span>
+              <div class="vertical-chart-track"><i style="height:{% if month.percentage %}{{ month.percentage }}{% else %}2{% endif %}%"></i></div>
+              <small>{{ month.label }}</small>
+            </div>
+          {% endfor %}
+        </div>
+      </article>
+
+      <article class="analytics-card">
+        <header class="analytics-card-head"><div><span>Commandes</span><h2>Repartition des statuts</h2></div><strong>{{ order_count }}</strong></header>
+        <div class="donut-layout">
+          <div class="analytics-donut" style="background:{{ order_status_gradient }}"><div><strong>{{ order_count }}</strong><small>Total</small></div></div>
+          <div class="analytics-legend">
+            {% for item in order_statuses %}
+              <div><i style="background:{{ item.color }}"></i><span>{{ item.label }}</span><strong>{{ item.count }}</strong></div>
+            {% endfor %}
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="analytics-grid analytics-grid-three">
+      <article class="analytics-card">
+        <header class="analytics-card-head"><div><span>Agriculture</span><h2>Productions par produit</h2></div></header>
+        <div class="analytics-bars">
+          {% for row in production_by_product %}
+            <div class="analytics-bar-row"><div><span>{{ row.label }}</span><strong>{{ row.value|floatformat:"-2" }}</strong></div><div><i class="bar-green" style="width:{{ row.percentage }}%"></i></div></div>
+          {% empty %}<p class="analytics-empty">Aucune production disponible.</p>{% endfor %}
+        </div>
+      </article>
+
+      <article class="analytics-card">
+        <header class="analytics-card-head"><div><span>Ventes</span><h2>Produits les plus vendus</h2></div></header>
+        <div class="analytics-bars">
+          {% for row in sales_by_product %}
+            <div class="analytics-bar-row"><div><span>{{ row.label }}</span><strong>{{ row.value }}</strong></div><div><i class="bar-violet" style="width:{{ row.percentage }}%"></i></div></div>
+          {% empty %}<p class="analytics-empty">Aucune vente payee.</p>{% endfor %}
+        </div>
+      </article>
+
+      <article class="analytics-card">
+        <header class="analytics-card-head"><div><span>Utilisateurs</span><h2>Repartition des roles</h2></div></header>
+        <div class="role-distribution">
+          {% for item in role_distribution %}
+            <div><div><i style="background:{{ item.color }}"></i><span>{{ item.label }}</span><strong>{{ item.count }}</strong></div><div class="role-track"><i style="width:{{ item.percentage }}%;background:{{ item.color }}"></i></div></div>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="analytics-grid analytics-grid-bottom">
+      <article class="analytics-card">
+        <header class="analytics-card-head"><div><span>Activite recente</span><h2>Dernieres commandes</h2></div><a href="{% url 'sales:order_list' %}">Tout voir</a></header>
+        <div class="analytics-table-wrap">
+          <table class="analytics-table">
+            <thead><tr><th>Reference</th><th>Client</th><th>Total</th><th>Statut</th></tr></thead>
+            <tbody>
+              {% for order in recent_orders %}
+                <tr><td><a href="{% url 'sales:order_detail' order.pk %}">{{ order.reference }}</a></td><td>{{ order.customer.get_full_name|default:order.customer.username }}</td><td>{{ order.total_amount|floatformat:"0" }} FCFA</td><td><span class="status-pill status-{{ order.status|lower }}">{{ order.get_status_display }}</span></td></tr>
+              {% empty %}<tr><td colspan="4">Aucune commande recente.</td></tr>{% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="analytics-card">
+        <header class="analytics-card-head"><div><span>Classement</span><h2>Cooperatives par revenus</h2></div></header>
+        <div class="analytics-ranking">
+          {% for row in top_cooperatives %}
+            <div><span class="rank-number">{{ forloop.counter|stringformat:"02d" }}</span><div><strong>{{ row.label }}</strong><div><i style="width:{{ row.percentage }}%"></i></div></div><b>{{ row.value|floatformat:"0" }} F</b></div>
+          {% empty %}<p class="analytics-empty">Pas encore de revenus par cooperative.</p>{% endfor %}
+        </div>
+      </article>
+    </section>
+
+    <section class="analytics-grid analytics-grid-bottom">
+      <article class="analytics-card">
+        <header class="analytics-card-head"><div><span>Alertes</span><h2>Stocks faibles</h2></div><a href="{% url 'products:list' %}">Gerer</a></header>
+        <div class="analytics-alert-list">
+          {% for product in low_stock_products %}
+            <div><span class="alert-dot"></span><div><strong>{{ product.name }}</strong><small>{{ product.cooperative.name }}</small></div><b>{{ product.quantity_available|floatformat:"-2" }}</b></div>
+          {% empty %}<p class="analytics-empty">Aucune alerte de stock.</p>{% endfor %}
+        </div>
+      </article>
+      <article class="analytics-card">
+        <header class="analytics-card-head"><div><span>Communication</span><h2>Messages recents</h2></div><a href="{% url 'accounts:message_inbox' %}">Boite de reception</a></header>
+        <div class="analytics-message-list">
+          {% for item in recent_messages %}
+            <a href="{% url 'accounts:message_manage' item.pk %}"><span>{{ item.name|slice:":1"|upper }}</span><div><strong>{{ item.subject }}</strong><small>{{ item.get_category_display }} · {{ item.created_at|timesince }}</small></div><em>{{ item.get_status_display }}</em></a>
+          {% empty %}<p class="analytics-empty">Aucun message recent.</p>{% endfor %}
+        </div>
+      </article>
+    </section>
+
+  {% elif is_manager %}
+    {% if not cooperative %}<div class="alert alert-warning">Aucune cooperative n'est rattachee a votre compte.</div>{% endif %}
+    <section class="analytics-kpi-grid manager-kpis">
+      <a class="analytics-kpi tone-cyan" href="{% url 'members:list' %}"><span class="kpi-icon">ME</span><div><small>Membres</small><strong>{{ member_count }}</strong><em>Membres de la cooperative</em></div></a>
+      <a class="analytics-kpi tone-green" href="{% url 'productions:list' %}"><span class="kpi-icon">PR</span><div><small>Productions</small><strong>{{ production_total|floatformat:"-2" }}</strong><em>Quantite cumulee</em></div></a>
+      <a class="analytics-kpi tone-indigo" href="{% url 'products:list' %}"><span class="kpi-icon">PD</span><div><small>Produits</small><strong>{{ product_count }}</strong><em>Produits geres</em></div></a>
+      <a class="analytics-kpi tone-violet" href="{% url 'sales:order_list' %}"><span class="kpi-icon">CM</span><div><small>Commandes</small><strong>{{ order_count }}</strong><em>{{ cooperative_products_sold }} articles vendus</em></div></a>
+      <div class="analytics-kpi tone-amber"><span class="kpi-icon">RE</span><div><small>Revenus</small><strong>{{ cooperative_revenue|floatformat:"0" }}</strong><em>FCFA encaisses</em></div></div>
+    </section>
+    <section class="analytics-grid analytics-grid-main">
+      <article class="analytics-card chart-card-wide">
+        <header class="analytics-card-head"><div><span>Performance</span><h2>Revenus mensuels de la cooperative</h2></div></header>
+        <div class="vertical-chart">
+          {% for month in manager_monthly_revenue %}<div class="vertical-chart-item"><span class="chart-value">{{ month.value|floatformat:"0" }}</span><div class="vertical-chart-track"><i style="height:{% if month.percentage %}{{ month.percentage }}{% else %}2{% endif %}%"></i></div><small>{{ month.label }}</small></div>{% endfor %}
+        </div>
+      </article>
+      <article class="analytics-card">
+        <header class="analytics-card-head"><div><span>Catalogue</span><h2>Produits les plus vendus</h2></div></header>
+        <div class="analytics-bars">{% for row in manager_top_products %}<div class="analytics-bar-row"><div><span>{{ row.label }}</span><strong>{{ row.value }}</strong></div><div><i class="bar-violet" style="width:{{ row.percentage }}%"></i></div></div>{% empty %}<p class="analytics-empty">Aucune vente payee.</p>{% endfor %}</div>
+      </article>
+    </section>
+    <section class="analytics-card">
+      <header class="analytics-card-head"><div><span>Commandes</span><h2>Activite recente</h2></div><a href="{% url 'sales:order_list' %}">Tout voir</a></header>
+      <div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Reference</th><th>Client</th><th>Date</th><th>Statut</th></tr></thead><tbody>{% for order in manager_recent_orders %}<tr><td><a href="{% url 'sales:order_detail' order.pk %}">{{ order.reference }}</a></td><td>{{ order.customer.get_full_name|default:order.customer.username }}</td><td>{{ order.created_at|date:"d/m/Y" }}</td><td>{{ order.get_status_display }}</td></tr>{% empty %}<tr><td colspan="4">Aucune commande.</td></tr>{% endfor %}</tbody></table></div>
+    </section>
+
+  {% elif is_farmer %}
+    {% if not member %}<div class="alert alert-warning">Votre compte n'est pas rattache a une fiche membre.</div>{% endif %}
+    <section class="analytics-kpi-grid farmer-kpis">
+      <a class="analytics-kpi tone-green" href="{% url 'productions:list' %}"><span class="kpi-icon">DE</span><div><small>Declarations</small><strong>{{ production_count }}</strong><em>Recoltes enregistrees</em></div></a>
+      <div class="analytics-kpi tone-cyan"><span class="kpi-icon">QT</span><div><small>Quantite produite</small><strong>{{ production_total|floatformat:"-2" }}</strong><em>Unites cumulees</em></div></div>
+      <div class="analytics-kpi tone-amber"><span class="kpi-icon">RE</span><div><small>Revenus estimes</small><strong>{{ farmer_revenue|floatformat:"0" }}</strong><em>FCFA</em></div></div>
+      <a class="analytics-kpi tone-violet" href="{% url 'training:list' %}"><span class="kpi-icon">FO</span><div><small>Formations</small><strong>{{ course_count }}</strong><em>Cours disponibles</em></div></a>
+    </section>
+    <section class="analytics-grid analytics-grid-main">
+      <article class="analytics-card chart-card-wide">
+        <header class="analytics-card-head"><div><span>Evolution</span><h2>Mes productions mensuelles</h2></div></header>
+        <div class="vertical-chart">{% for month in farmer_monthly_production %}<div class="vertical-chart-item"><span class="chart-value">{{ month.value|floatformat:"-2" }}</span><div class="vertical-chart-track"><i class="chart-green" style="height:{% if month.percentage %}{{ month.percentage }}{% else %}2{% endif %}%"></i></div><small>{{ month.label }}</small></div>{% endfor %}</div>
+      </article>
+      <article class="analytics-card"><header class="analytics-card-head"><div><span>Repartition</span><h2>Mes produits</h2></div></header><div class="analytics-bars">{% for row in farmer_products %}<div class="analytics-bar-row"><div><span>{{ row.label }}</span><strong>{{ row.value|floatformat:"-2" }}</strong></div><div><i class="bar-green" style="width:{{ row.percentage }}%"></i></div></div>{% empty %}<p class="analytics-empty">Aucune production.</p>{% endfor %}</div></article>
+    </section>
+    <section class="analytics-card"><header class="analytics-card-head"><div><span>Historique</span><h2>Dernieres recoltes</h2></div><a href="{% url 'productions:create' %}">Declarer une recolte</a></header><div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Produit</th><th>Quantite</th><th>Date</th><th>Valeur estimee</th></tr></thead><tbody>{% for production in recent_productions %}<tr><td>{{ production.product.name }}</td><td>{{ production.quantity|floatformat:"-2" }}</td><td>{{ production.harvest_date|date:"d/m/Y" }}</td><td>{{ production.estimated_price|floatformat:"0" }} FCFA</td></tr>{% empty %}<tr><td colspan="4">Aucune recolte declaree.</td></tr>{% endfor %}</tbody></table></div></section>
+  {% endif %}
 </div>
 {% endblock %}

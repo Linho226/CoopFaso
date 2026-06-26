@@ -1,0 +1,164 @@
+<!doctype html>
+{% load static %}
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}CoopFaso{% endblock %}</title>
+  <meta name="theme-color" content="#0f172a">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script>
+    tailwind = {
+      config: {
+        corePlugins: { preflight: false },
+        theme: {
+          extend: {
+            colors: {
+              coop: { navy: '#0f172a', blue: '#2563eb', violet: '#7c3aed', cyan: '#06b6d4', orange: '#f97316' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'css/public.css' %}?v=6">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <header class="public-header public-header-floating">
+    <div class="public-container public-nav">
+      <a class="public-brand group" href="{% url 'public_site:home' %}">
+        <span class="transition-transform duration-300 group-hover:rotate-6 group-hover:scale-105">
+          CF
+        </span>
+
+        <strong>CoopFaso</strong>
+        
+        <i class="bf-flag" aria-label="Drapeau du Burkina Faso" role="img"></i>
+
+      </a>
+      <button class="nav-toggle" type="button" aria-label="Ouvrir le menu" aria-expanded="false" onclick="togglePublicMenu(this)">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="public-links">
+        <a class="{% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" href="{% url 'public_site:home' %}">Accueil</a>
+        <a class="{% if request.resolver_match.url_name == 'products' or request.resolver_match.url_name == 'product_detail' %}is-active{% endif %}" href="{% url 'public_site:products' %}">Catalogue</a>
+        <a class="{% if request.resolver_match.url_name == 'cooperatives' or request.resolver_match.url_name == 'cooperative_detail' %}is-active{% endif %}" href="{% url 'public_site:cooperatives' %}">Cooperatives</a>
+        <a class="{% if request.resolver_match.url_name == 'trainings' or request.resolver_match.url_name == 'training_detail' %}is-active{% endif %}" href="{% url 'public_site:trainings' %}">Formations</a>
+        <a class="{% if request.resolver_match.url_name == 'news' or request.resolver_match.url_name == 'news_detail' %}is-active{% endif %}" href="{% url 'public_site:news' %}">Actualites</a>
+        <a class="{% if request.resolver_match.url_name == 'contact' %}is-active{% endif %}" href="{% url 'public_site:contact' %}">Contact</a>
+        {% if user.is_authenticated %}
+          {% if user.profile.role == 'BUYER' %}
+            <a class="mobile-auth-link" href="{% url 'sales:cart' %}">Panier{% if cart_count %} ({{ cart_count }}){% endif %}</a>
+            <a class="mobile-auth-link" href="{% url 'sales:order_list' %}">Mes commandes</a>
+            <a class="mobile-auth-link" href="{% url 'payments:history' %}">Paiements</a>
+            <a class="mobile-auth-link" href="{% url 'accounts:my_messages' %}">Messages</a>
+            <a class="mobile-auth-link" href="{% url 'accounts:profile' %}">Profil</a>
+          {% else %}
+            <a class="mobile-auth-link" href="{% url 'accounts:dashboard' %}">Mon espace</a>
+          {% endif %}
+        {% else %}
+          <a class="mobile-auth-link" href="{% url 'accounts:login' %}">Connexion</a>
+          <a class="mobile-auth-link" href="{% url 'accounts:register' %}">Inscription</a>
+        {% endif %}
+      </nav>
+      <div class="public-actions">
+        {% if user.is_authenticated %}
+          {% if user.profile.role == 'BUYER' %}
+            <a class="nav-cart-link" href="{% url 'sales:cart' %}" aria-label="Voir mon panier">
+              <span class="nav-cart-icon">⌑</span>
+              <span>Panier</span>
+              {% if cart_count %}<strong>{{ cart_count }}</strong>{% endif %}
+            </a>
+            <details class="account-menu">
+              <summary>
+                <span class="account-avatar">{{ user.username|slice:":1"|upper }}</span>
+                <span class="account-summary-copy">
+                  <small>Mon compte</small>
+                  <strong>{{ user.get_full_name|default:user.username|truncatechars:18 }}</strong>
+                </span>
+                <span class="account-chevron">⌄</span>
+              </summary>
+              <div class="account-dropdown">
+                <div class="account-dropdown-head">
+                  <strong>{{ user.get_full_name|default:user.username }}</strong>
+                  <small>Acheteur</small>
+                </div>
+                <a href="{% url 'sales:order_list' %}"><span>✓</span> Mes commandes</a>
+                <a href="{% url 'payments:history' %}"><span>₣</span> Mes paiements</a>
+                <a href="{% url 'accounts:my_messages' %}"><span>✉</span> Mes messages</a>
+                <a href="{% url 'accounts:profile' %}"><span>U</span> Mon profil</a>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'public_site:home' %}">
+                  <button type="submit"><span>↪</span> Se deconnecter</button>
+                </form>
+              </div>
+            </details>
+          {% else %}
+            <a class="btn btn-outline" href="{% url 'accounts:dashboard' %}">Mon espace</a>
+          {% endif %}
+        {% else %}
+          <a class="btn btn-ghost" href="{% url 'accounts:login' %}">Connexion</a>
+          <a class="btn btn-primary" href="{% url 'accounts:register' %}">Inscription</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="public-container message-stack">
+      {% for message in messages %}<div class="public-alert">{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+
+  <main>{% block content %}{% endblock %}</main>
+
+  <footer class="public-footer">
+    <div class="public-container footer-grid">
+      <div><a class="public-brand footer-brand" href="{% url 'public_site:home' %}"><span>CF</span><strong>CoopFaso</strong></a><p>La plateforme numerique des cooperatives agricoles du Burkina Faso.</p></div>
+      <div><h3>Explorer</h3><a href="{% url 'public_site:products' %}">Produits</a><a href="{% url 'public_site:cooperatives' %}">Cooperatives</a><a href="{% url 'public_site:trainings' %}">Formations</a></div>
+      <div><h3>Votre espace</h3><a href="{% url 'accounts:register' %}">Creer un compte</a><a href="{% url 'accounts:login' %}">Se connecter</a><a href="{% url 'public_site:contact' %}">Nous contacter</a></div>
+    </div>
+    <div class="public-container footer-bottom">© {% now "Y" %} CoopFaso · Agriculture locale, cooperation durable.</div>
+  </footer>
+  <script>
+    function togglePublicMenu(button) {
+      const menu = document.querySelector('.public-links');
+      const isOpen = menu.classList.toggle('is-open');
+      button.classList.toggle('is-open', isOpen);
+      button.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    document.addEventListener('click', (event) => {
+      const menu = document.querySelector('.public-links');
+      const button = document.querySelector('.nav-toggle');
+      const accountMenu = document.querySelector('.account-menu');
+      if (menu && button && menu.classList.contains('is-open') && !menu.contains(event.target) && !button.contains(event.target)) {
+        menu.classList.remove('is-open');
+        button.classList.remove('is-open');
+        button.setAttribute('aria-expanded', 'false');
+      }
+      if (accountMenu && accountMenu.open && !accountMenu.contains(event.target)) {
+        accountMenu.removeAttribute('open');
+      }
+    });
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.public-section, .figures, .cta-section, .page-hero').forEach((element) => {
+      element.classList.add('reveal-section');
+      revealObserver.observe(element);
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,130 @@
+{% extends 'public_site/base.html' %}
+{% block title %}CoopFaso · Le marché agricole connecté{% endblock %}
+{% block content %}
+<div class="home-dark">
+  <section class="neo-hero">
+    <div class="hero-noise"></div>
+    <div class="hero-glow glow-blue"></div>
+    <div class="hero-glow glow-violet"></div>
+    <div class="public-container neo-hero-grid">
+      <div class="neo-hero-copy">
+        <span class="neo-kicker"><i></i> Agriculture locale · Impact collectif</span>
+        <h1>Le marché agricole, <span>réinventé ensemble.</span></h1>
+        <p>{{ platform.presentation|default:"CoopFaso rapproche les producteurs, les coopératives et les acheteurs dans un espace simple, transparent et profondément local." }}</p>
+        <div class="neo-actions">
+          <a class="neo-button neo-button-primary" href="{% url 'public_site:products' %}">Explorer le marché <span>↗</span></a>
+          <a class="neo-button neo-button-secondary" href="{% url 'public_site:cooperatives' %}">Nos coopératives</a>
+        </div>
+        <div class="neo-proof">
+          <div class="proof-avatars"><span>A</span><span>C</span><span>P</span></div>
+          <div><strong>{{ key_figures.members }} acteurs actifs</strong><small>Une communauté qui grandit localement</small></div>
+        </div>
+      </div>
+
+      <div class="market-visual">
+        <div class="market-orbit orbit-a"></div>
+        <div class="market-orbit orbit-b"></div>
+        <div class="ecosystem-card">
+          <div class="ecosystem-head">
+            <div class="window-dots"><i></i><i></i><i></i></div>
+            <span>Écosystème CoopFaso</span>
+            <em>Connecté</em>
+          </div>
+          <div class="ecosystem-map">
+            <div class="map-grid"></div>
+            <svg class="connection-lines" viewBox="0 0 500 300" aria-hidden="true">
+              <path d="M250 150 C190 105 150 92 102 82"/>
+              <path d="M250 150 C310 105 350 92 398 82"/>
+              <path d="M250 150 C190 200 150 215 102 225"/>
+              <path d="M250 150 C310 200 350 215 398 225"/>
+            </svg>
+            <div class="ecosystem-core">
+              <span>CF</span>
+              <strong>CoopFaso</strong>
+              <small>Plateforme centrale</small>
+            </div>
+            <div class="ecosystem-node node-farmers"><i>AG</i><span><strong>Agriculteurs</strong><small>Produire</small></span></div>
+            <div class="ecosystem-node node-coops"><i>CO</i><span><strong>Coopératives</strong><small>Organiser</small></span></div>
+            <div class="ecosystem-node node-buyers"><i>AC</i><span><strong>Acheteurs</strong><small>Commander</small></span></div>
+            <div class="ecosystem-node node-training"><i>FO</i><span><strong>Formations</strong><small>Progresser</small></span></div>
+            <div class="signal signal-one"></div>
+            <div class="signal signal-two"></div>
+            <div class="signal signal-three"></div>
+          </div>
+          <div class="ecosystem-stats">
+            <div><span>{{ key_figures.cooperatives }}</span><small>Coopératives</small></div>
+            <div><span>{{ key_figures.members }}</span><small>Membres actifs</small></div>
+            <div><span>{{ key_figures.sold }}</span><small>Ventes réalisées</small></div>
+          </div>
+        </div>
+        <div class="floating-note note-one"><i>◎</i><span><small>Réseau</small><strong>Acteurs connectés</strong></span></div>
+        <div class="floating-note note-two"><i>↗</i><span><small>Impact</small><strong>Économie locale</strong></span></div>
+      </div>
+    </div>
+    <div class="scroll-cue"><span></span> Découvrir</div>
+  </section>
+
+  <section class="neo-section">
+    <div class="public-container">
+      <div class="neo-heading">
+        <div><span>Une plateforme, trois expériences</span><h2>Tout l'écosystème agricole<br>dans un même espace.</h2></div>
+        <p>Acheter local, valoriser une production ou développer ses compétences : CoopFaso relie chaque besoin au bon acteur.</p>
+      </div>
+      <div class="experience-bento">
+        <a class="bento-card bento-market" href="{% url 'public_site:products' %}">
+          <div class="bento-number">01</div><div class="bento-icon">⌁</div>
+          <div><span>Marché agricole</span><h3>Des produits locaux accessibles simplement.</h3><p>Explorez les récoltes disponibles par région et par catégorie.</p></div>
+          <strong>Voir le catalogue ↗</strong>
+        </a>
+        <a class="bento-card bento-coop" href="{% url 'public_site:cooperatives' %}">
+          <div class="bento-number">02</div><div class="bento-icon">◉</div>
+          <div><span>Réseau coopératif</span><h3>Rencontrez celles et ceux qui produisent.</h3></div>
+          <strong>Explorer le réseau ↗</strong>
+        </a>
+        <a class="bento-card bento-learn" href="{% url 'public_site:trainings' %}">
+          <div class="bento-number">03</div><div class="bento-icon">▷</div>
+          <div><span>Transmission</span><h3>Apprendre aujourd'hui. Mieux produire demain.</h3></div>
+          <strong>Voir les formations ↗</strong>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {% if featured_products %}
+  <section class="neo-section products-showcase">
+    <div class="public-container">
+      <div class="neo-heading compact">
+        <div><span>Fraîchement disponibles</span><h2>Du local, sans détour.</h2></div>
+        <a class="text-link" href="{% url 'public_site:products' %}">Tout le catalogue <b>↗</b></a>
+      </div>
+      <div class="neo-product-row">
+        {% for product in featured_products|slice:":3" %}
+          <a class="neo-product" href="{% url 'public_site:product_detail' product.pk %}">
+            <div class="neo-product-image">
+              {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% else %}<span>{{ product.name|slice:":2"|upper }}</span>{% endif %}
+              <em>{{ product.category.name|default:"Produit local" }}</em>
+            </div>
+            <div class="neo-product-copy">
+              <small>{{ product.cooperative.name }} · {{ product.cooperative.region }}</small>
+              <h3>{{ product.name }}</h3>
+              <div><strong>{{ product.price|floatformat:"0" }} FCFA</strong><span>Voir ↗</span></div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="neo-cta-wrap">
+    <div class="public-container">
+      <div class="neo-cta">
+        <div class="cta-rings"></div>
+        <span>Prêt à rejoindre le mouvement ?</span>
+        <h2>Construisons un marché agricole<br>plus proche et plus fort.</h2>
+        <div><a class="neo-button neo-button-light" href="{% url 'accounts:register' %}">Créer mon compte</a><a href="{% url 'public_site:contact' %}">Parler à l'équipe →</a></div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

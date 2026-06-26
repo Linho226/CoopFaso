@@ -1,0 +1,26 @@
+{% extends 'public_site/base.html' %}
+{% block title %}{{ product.name }} · CoopFaso{% endblock %}
+{% block content %}
+<section class="public-section"><div class="public-container detail-grid">
+  <div class="detail-image">{% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}">{% else %}<span>{{ product.name|slice:":2"|upper }}</span>{% endif %}</div>
+  <div class="detail-copy">
+    <span class="eyebrow">{{ product.category.name|default:"Produit agricole" }}</span>
+    <h1>{{ product.name }}</h1>
+    <a class="producer-link" href="{% url 'public_site:cooperative_detail' product.cooperative.pk %}">Produit par {{ product.cooperative.name }} · {{ product.cooperative.region }}</a>
+    <p class="detail-description">{{ product.description|default:"Aucune description disponible."|linebreaksbr }}</p>
+    <div class="detail-stats"><div><span>Prix</span><strong>{{ product.price|floatformat:"0" }} FCFA</strong></div><div><span>Disponible</span><strong>{{ product.quantity_available|floatformat:"-2" }}</strong></div></div>
+    {% if user.is_authenticated and user.profile.role == 'BUYER' %}
+      <form method="post" action="{% url 'sales:cart_add' product.pk %}" class="buy-box">
+        {% csrf_token %}
+        <input type="number" name="quantity" min="1" max="{{ product.quantity_available|floatformat:'0' }}" value="1">
+        <input type="hidden" name="next" value="{% url 'sales:cart' %}">
+        <button class="btn btn-primary" type="submit">Ajouter au panier</button>
+      </form>
+    {% elif user.is_authenticated %}
+      <div class="login-box"><p>La commande de produits est reservee aux comptes acheteurs.</p><a class="btn btn-outline" href="{% url 'accounts:dashboard' %}">Retour a mon espace</a></div>
+    {% else %}
+      <div class="login-box"><p>Connectez-vous avec un compte acheteur pour commander ce produit.</p><a class="btn btn-primary" href="{% url 'accounts:login' %}?next={{ request.path }}">Se connecter</a><a class="btn btn-outline" href="{% url 'accounts:register' %}">Creer un compte</a></div>
+    {% endif %}
+  </div>
+</div></section>
+{% endblock %}

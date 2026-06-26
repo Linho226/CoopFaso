@@ -37,6 +37,16 @@ class ProductionForm(forms.ModelForm):
             else:
                 field.widget.attrs.setdefault('class', 'form-control')
 
+    def clean(self):
+        cleaned_data = super().clean()
+        member = cleaned_data.get('member')
+        product = cleaned_data.get('product')
+        if member and product and member.cooperative_id != product.cooperative_id:
+            raise forms.ValidationError(
+                'Le membre et le produit doivent appartenir a la meme cooperative.'
+            )
+        return cleaned_data
+
 class FarmerProductionForm(forms.ModelForm):
     class Meta:
         model = Production

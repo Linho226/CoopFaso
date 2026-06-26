@@ -1,0 +1,31 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+    <div><h1 class="h3 fw-bold mb-1">{{ title }}</h1><p class="text-muted mb-0">Le contenu publie apparaitra dans la rubrique Actualites du site public.</p></div>
+    <a class="btn btn-outline-secondary" href="{% url 'public_site:news_manage_list' %}">Retour</a>
+  </div>
+  <div class="dashboard-panel p-4">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="mb-3"><label class="form-label" for="{{ form.title.id_for_label }}">{{ form.title.label }}</label>{{ form.title }}{% for error in form.title.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+          <div class="mb-3"><label class="form-label" for="{{ form.summary.id_for_label }}">{{ form.summary.label }}</label>{{ form.summary }}{% for error in form.summary.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+          <div><label class="form-label" for="{{ form.content.id_for_label }}">{{ form.content.label }}</label>{{ form.content }}{% for error in form.content.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+        </div>
+        <div class="col-lg-4">
+          <div class="news-editor-side">
+            {% if news and news.image %}<img class="news-editor-preview" src="{{ news.image.url }}" alt="{{ news.title }}">{% endif %}
+            <div class="mb-3"><label class="form-label" for="{{ form.image.id_for_label }}">{{ form.image.label }}</label>{{ form.image }}{% for error in form.image.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+            <div class="mb-3"><label class="form-label" for="{{ form.published_at.id_for_label }}">{{ form.published_at.label }}</label>{{ form.published_at }}{% for error in form.published_at.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+            <div class="form-check mb-4">{{ form.is_published }}<label class="form-check-label" for="{{ form.is_published.id_for_label }}">{{ form.is_published.label }}</label></div>
+            <button class="btn btn-success w-100" type="submit">{{ submit_label }}</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
