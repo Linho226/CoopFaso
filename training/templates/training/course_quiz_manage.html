@@ -1,0 +1,70 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+<div class="py-5">
+  <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+    <div>
+      <p class="auth-badge mb-2">Quiz</p>
+      <h1 class="h3 fw-bold mb-1">{{ course.title }}</h1>
+      <p class="text-muted mb-0">Ajoutez des questions et indiquez la bonne reponse.</p>
+    </div>
+    <div class="d-flex gap-2 align-self-start">
+      <a class="btn btn-outline-secondary" href="{{ course.get_absolute_url }}">Retour au cours</a>
+      <a class="btn btn-outline-primary" href="{% url 'training:update' course.pk %}">Modifier le cours</a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-7">
+      <div class="dashboard-panel p-4">
+        <h2 class="h5 fw-bold mb-3">Questions existantes</h2>
+        <div class="quiz-question-list">
+          {% for question in course.questions.all %}
+            <article class="quiz-question-card">
+              <div>
+                <span>Question {{ forloop.counter }}</span>
+                <h3>{{ question.text }}</h3>
+              </div>
+              <ul>
+                {% for choice in question.choices.all %}
+                  <li class="{% if choice.is_correct %}is-correct{% endif %}">
+                    {{ choice.text }}{% if choice.is_correct %}<strong>Bonne reponse</strong>{% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_question">
+                <input type="hidden" name="question_id" value="{{ question.pk }}">
+                <button class="btn btn-outline-danger btn-sm" type="submit">Supprimer</button>
+              </form>
+            </article>
+          {% empty %}
+            <p class="text-muted mb-0">Aucune question pour le moment.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      <div class="dashboard-panel p-4">
+        <h2 class="h5 fw-bold mb-3">Nouvelle question</h2>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+          {% for field in form %}
+            <div class="mb-3">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+          {% endfor %}
+          <button class="btn btn-success w-100" type="submit">Ajouter la question</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

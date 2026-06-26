@@ -1,0 +1,20 @@
+{% if course.has_video %}
+  <div class="{{ panel_class|default:'course-video-panel' }}">
+    <h2 class="h5 fw-bold">Video du cours</h2>
+    {% if course.video_file %}
+      <video class="course-video-player" controls preload="metadata" data-course-video{% if course.cover_image %} poster="{{ course.cover_image.url }}"{% endif %}>
+        <source src="{{ course.video_file.url }}">
+        Votre navigateur ne peut pas lire cette video.
+      </video>
+    {% elif course.video_url_is_direct_file %}
+      <video class="course-video-player" controls preload="metadata" data-course-video{% if course.cover_image %} poster="{{ course.cover_image.url }}"{% endif %}>
+        <source src="{{ course.video_url }}">
+        Votre navigateur ne peut pas lire cette video.
+      </video>
+    {% else %}
+      <div class="course-video-frame">
+        <iframe src="{% firstof course.video_embed_url course.video_url %}{% if course.youtube_video_id %}&origin={{ request.scheme }}://{{ request.get_host }}{% endif %}" title="Video du cours {{ course.title }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen{% if course.youtube_video_id %} data-youtube-video{% endif %}></iframe>
+      </div>
+    {% endif %}
+  </div>
+{% endif %}

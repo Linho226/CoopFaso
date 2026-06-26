@@ -51,6 +51,15 @@ class ProductTests(TestCase):
         response_detail = self.client.get(reverse('products:detail', args=[self.product.pk]))
         self.assertRedirects(response_detail, reverse('accounts:dashboard'))
 
+    def test_manager_product_detail_does_not_show_cart_action(self):
+        self.client.force_login(self.manager)
+        response = self.client.get(reverse('products:detail', args=[self.product.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'Ajouter au panier')
+        self.assertNotContains(response, reverse('sales:cart_add', args=[self.product.pk]))
+        self.assertContains(response, 'Stock disponible')
+
     def test_manager_can_create_and_delete_product(self):
         self.client.force_login(self.manager)
         

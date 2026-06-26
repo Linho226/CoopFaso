@@ -7,7 +7,7 @@
   <title>CoopFaso</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
   <link rel="stylesheet" href="{% static 'css/accounts.css' %}?v=4">
-  <link rel="stylesheet" href="{% static 'css/layout.css' %}?v=5">
+  <link rel="stylesheet" href="{% static 'css/layout.css' %}?v=10">
 </head>
 <body>
   {% if user.is_authenticated %}
@@ -82,7 +82,7 @@
             </div>
           {% endif %}
 
-          {% if user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' or user.profile.role == 'FARMER' %}
+          {% if user.is_staff or user.is_superuser or user.profile.role == 'ADMIN' or user.profile.role == 'FARMER' or user.profile.role == 'BUYER' %}
             <div class="sidebar-group">
               <div class="sidebar-group-label">Ressources</div>
               <a class="sidebar-link {% if request.resolver_match.namespace == 'training' %}is-active{% endif %}" href="{% url 'training:list' %}">

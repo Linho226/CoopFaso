@@ -10,21 +10,21 @@
     </div>
     <div class="d-flex gap-2 align-self-start">
       <a class="btn btn-outline-secondary" href="{% url 'training:list' %}">Retour</a>
-      {% if can_manage %}<a class="btn btn-outline-primary" href="{% url 'training:update' course.pk %}">Modifier</a>{% endif %}
+      {% if can_manage %}
+        <a class="btn btn-outline-primary" href="{% url 'training:update' course.pk %}">Modifier</a>
+        <a class="btn btn-success" href="{% url 'training:quiz_manage' course.pk %}">Gerer le quiz</a>
+      {% endif %}
     </div>
   </div>
   <div class="row g-4">
     <div class="col-lg-8">
+      {% if course.cover_image %}
+        <img class="course-detail-cover" src="{{ course.cover_image.url }}" alt="Affiche de {{ course.title }}">
+      {% endif %}
       <article class="dashboard-panel p-4 p-lg-5 course-content">
         {{ course.content|linebreaks }}
       </article>
-      {% if course.video_url %}
-        <div class="dashboard-panel p-4 mt-4">
-          <h2 class="h5 fw-bold">Video du cours</h2>
-          <p class="text-muted">La video s’ouvre sur sa plateforme d’hebergement.</p>
-          <a class="btn btn-outline-primary" href="{{ course.video_url }}" target="_blank" rel="noopener">Regarder la video</a>
-        </div>
-      {% endif %}
+      {% include 'training/includes/course_video.html' with panel_class='dashboard-panel p-4 mt-4' button_class='btn btn-outline-primary' %}
     </div>
     <div class="col-lg-4">
       <div class="dashboard-panel p-4 mb-4">
@@ -35,6 +35,19 @@
           <p class="small text-muted mb-0">Aucun document joint.</p>
         {% endif %}
       </div>
+      {% if can_manage %}
+        <div class="dashboard-panel p-4 mb-4">
+          <h2 class="h5 fw-bold">Quiz du cours</h2>
+          <p class="text-muted mb-3">
+            {% if course.questions.exists %}
+              {{ course.questions.count }} question{{ course.questions.count|pluralize }} configuree{{ course.questions.count|pluralize }}.
+            {% else %}
+              Aucun quiz n'est encore configure pour cette formation.
+            {% endif %}
+          </p>
+          <a class="btn btn-success w-100" href="{% url 'training:quiz_manage' course.pk %}">Gerer le quiz</a>
+        </div>
+      {% endif %}
       {% if course.questions.exists %}
         <div class="dashboard-panel p-4">
           <h2 class="h5 fw-bold">Quiz d’evaluation</h2>
@@ -54,6 +67,11 @@
             {% endfor %}
             <button class="btn btn-success w-100" type="submit">Valider mes reponses</button>
           </form>
+        </div>
+      {% elif not can_manage %}
+        <div class="dashboard-panel p-4">
+          <h2 class="h5 fw-bold">Quiz d’evaluation</h2>
+          <p class="text-muted mb-0">Aucun quiz n'est disponible pour cette formation.</p>
         </div>
       {% endif %}
     </div>

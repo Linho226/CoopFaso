@@ -25,16 +25,24 @@
     {% for course in courses %}
       <div class="col-md-6 col-xl-4">
         <article class="course-card h-100">
+          <div class="course-cover">
+            {% if course.cover_image %}
+              <img src="{{ course.cover_image.url }}" alt="Affiche de {{ course.title }}">
+            {% else %}
+              <span>{{ course.title|slice:":2"|upper }}</span>
+            {% endif %}
+          </div>
           <div class="course-theme">{{ course.get_theme_display }}</div>
           <h2 class="h5 fw-bold mt-3">{{ course.title }}</h2>
           <p class="text-muted">{{ course.summary|truncatewords:24 }}</p>
           <div class="d-flex gap-2 small mb-4">
             {% if course.document %}<span class="resource-chip">Document</span>{% endif %}
-            {% if course.video_url %}<span class="resource-chip">Video</span>{% endif %}
-            {% if course.questions.exists %}<span class="resource-chip">Quiz</span>{% endif %}
+            {% if course.has_video %}<span class="resource-chip">Video</span>{% endif %}
+            {% if course.question_count %}<span class="resource-chip">Quiz · {{ course.question_count }}</span>{% elif can_manage %}<span class="resource-chip quiz-missing">Quiz a creer</span>{% endif %}
             {% if not course.is_published %}<span class="badge text-bg-warning">Brouillon</span>{% endif %}
           </div>
           <a class="btn btn-outline-primary mt-auto" href="{{ course.get_absolute_url }}">Consulter le cours</a>
+          {% if can_manage %}<a class="btn btn-success mt-2" href="{% url 'training:quiz_manage' course.pk %}">Gerer le quiz</a>{% endif %}
         </article>
       </div>
     {% empty %}

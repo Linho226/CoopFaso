@@ -1,13 +1,17 @@
+import json
+
 from django.contrib import messages
-from django.contrib.auth.decorators import user_passes_test
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db.models import Q, Sum
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 
 from cooperatives.models import Cooperative
 from members.models import Member
 from products.models import Product, ProductCategory
 from sales.models import OrderItem
-from training.models import Course
+from training.models import Course, CourseProgress, QuizAttempt, QuizProgress
 
 from accounts.access import is_admin
 
@@ -119,8 +123,176 @@ def training_list(request):
 
 
 def training_detail(request, pk):
+    course = get_object_or_404(
+        Course.objects.prefetch_related('questions__choices'),
+        pk=pk,
+        is_published=True,
+    )
+    latest_attempt = None
+    course_progress = None
+    quiz_progress = None
+    video_required = course.has_video
+    video_completed = not video_required
+    if request.user.is_authenticated:
+        latest_attempt = request.user.quiz_attempts.filter(course=course).first()
+        course_progress, _ = CourseProgress.objects.get_or_create(
+            user=request.user,
+            course=course,
+        )
+        video_completed = not video_required or course_progress.video_completed
+        quiz_progress, _ = QuizProgress.objects.get_or_create(
+            user=request.user,
+            course=course,
+        )
+        if latest_attempt and quiz_progress.status != QuizProgress.Status.COMPLETED:
+            quiz_progress.status = QuizProgress.Status.COMPLETED
+            quiz_progress.score = latest_attempt.score
+            quiz_progress.total = latest_attempt.total
+            quiz_progress.completed_at = latest_attempt.completed_at
+            quiz_progress.save(update_fields=[
+                'status',
+                'score',
+                'total',
+                'completed_at',
+                'updated_at',
+            ])
+    quiz_state = {
+        'answers': getattr(quiz_progress, 'answers', {}) or {},
+        'current_index': getattr(quiz_progress, 'current_index', 0) or 0,
+    }
+    return render(request, 'public_site/training_detail.html', {
+        'course': course,
+        'latest_attempt': latest_attempt,
+        'course_progress': course_progress,
+        'quiz_progress': quiz_progress,
+        'quiz_state': quiz_state,
+        'video_required': video_required,
+        'video_completed': video_completed,
+        'quiz_completed': bool(latest_attempt),
+    })
+
+
+@login_required
+def training_quiz_submit(request, pk):
+    course = get_object_or_404(
+        Course.objects.prefetch_related('questions__choices'),
+        pk=pk,
+        is_published=True,
+    )
+    if request.method != 'POST':
+        return redirect('public_site:training_detail', pk=course.pk)
+
+    questions = list(course.questions.all())
+    if not questions:
+        messages.info(request, 'Aucun quiz disponible pour cette formation.')
+        return redirect('public_site:training_detail', pk=course.pk)
+
+    if request.user.quiz_attempts.filter(course=course).exists():
+        messages.info(request, 'Vous avez deja termine ce quiz.')
+        return redirect('public_site:training_detail', pk=course.pk)
+
+    course_progress, _ = CourseProgress.objects.get_or_create(
+        user=request.user,
+        course=course,
+    )
+    if course.has_video and not course_progress.video_completed:
+        messages.error(request, 'Regardez la video jusqu’a la fin avant de commencer le quiz.')
+        return redirect('public_site:training_detail', pk=course.pk)
+
+    score = 0
+    answers = {}
+    for question in questions:
+        selected_id = request.POST.get(f'question_{question.pk}')
+        if selected_id:
+            answers[str(question.pk)] = str(selected_id)
+        if selected_id and question.choices.filter(pk=selected_id, is_correct=True).exists():
+            score += 1
+
+    attempt = QuizAttempt.objects.create(
+        user=request.user,
+        course=course,
+        score=score,
+        total=len(questions),
+    )
+    quiz_progress, _ = QuizProgress.objects.get_or_create(
+        user=request.user,
+        course=course,
+    )
+    quiz_progress.answers = answers
+    quiz_progress.current_index = max(len(questions) - 1, 0)
+    quiz_progress.status = QuizProgress.Status.COMPLETED
+    quiz_progress.score = attempt.score
+    quiz_progress.total = attempt.total
+    quiz_progress.completed_at = attempt.completed_at
+    quiz_progress.save(update_fields=[
+        'answers',
+        'current_index',
+        'status',
+        'score',
+        'total',
+        'completed_at',
+        'updated_at',
+    ])
+    messages.success(
+        request,
+        f'Quiz termine : {attempt.score}/{attempt.total} ({attempt.percentage} %).',
+    )
+    return redirect('public_site:training_detail', pk=course.pk)
+
+
+@login_required
+@require_POST
+def training_video_complete(request, pk):
     course = get_object_or_404(Course, pk=pk, is_published=True)
-    return render(request, 'public_site/training_detail.html', {'course': course})
+    progress, _ = CourseProgress.objects.get_or_create(
+        user=request.user,
+        course=course,
+    )
+    progress.video_completed = True
+    progress.save(update_fields=['video_completed', 'updated_at'])
+    return JsonResponse({'ok': True, 'video_completed': True})
+
+
+@login_required
+@require_POST
+def training_quiz_progress(request, pk):
+    course = get_object_or_404(Course, pk=pk, is_published=True)
+    if request.user.quiz_attempts.filter(course=course).exists():
+        return JsonResponse({
+            'ok': False,
+            'completed': True,
+            'message': 'Quiz deja termine.',
+        }, status=409)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': False, 'message': 'Donnees invalides.'}, status=400)
+
+    progress, _ = QuizProgress.objects.get_or_create(
+        user=request.user,
+        course=course,
+    )
+    progress.answers = {
+        str(key): str(value)
+        for key, value in payload.get('answers', {}).items()
+        if value
+    }
+    progress.current_index = max(int(payload.get('current_index') or 0), 0)
+    progress.status = QuizProgress.Status.IN_PROGRESS
+    progress.completed_at = None
+    progress.save(update_fields=[
+        'answers',
+        'current_index',
+        'status',
+        'completed_at',
+        'updated_at',
+    ])
+    return JsonResponse({
+        'ok': True,
+        'answers': progress.answers,
+        'current_index': progress.current_index,
+    })
 
 
 def news_list(request):

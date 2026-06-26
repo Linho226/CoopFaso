@@ -1,6 +1,267 @@
 {% extends 'public_site/base.html' %}
 {% block title %}{{ course.title }} · CoopFaso{% endblock %}
 {% block content %}
-<section class="page-hero"><div class="public-container narrow"><span class="eyebrow">{{ course.get_theme_display }}</span><h1>{{ course.title }}</h1><p>{{ course.summary }}</p></div></section>
-<section class="public-section"><div class="public-container article-layout"><article class="article-content">{{ course.content|linebreaks }}</article><aside class="article-sidebar"><h3>Ressources</h3>{% if course.video_url %}<a class="btn btn-primary" href="{{ course.video_url }}" target="_blank" rel="noopener">Regarder la video</a>{% endif %}{% if course.document %}<a class="btn btn-outline" href="{{ course.document.url }}" download>Telecharger le document</a>{% endif %}{% if not course.video_url and not course.document %}<p>Aucune ressource jointe.</p>{% endif %}<div class="member-cta"><strong>Testez vos connaissances</strong><p>Les quiz sont disponibles dans l'espace membre.</p><a href="{% url 'accounts:login' %}">Acceder a mon espace</a></div></aside></div></section>
+<section class="public-section training-detail-page">
+  <div class="public-container article-layout training-detail-layout">
+    <article class="article-content training-detail-main">
+      <header class="training-detail-head">
+        <span class="eyebrow">{{ course.get_theme_display }}</span>
+        <h1>{{ course.title }}</h1>
+        <p>{{ course.summary }}</p>
+      </header>
+      {% if course.cover_image and not course.has_video %}
+        <img class="article-cover" src="{{ course.cover_image.url }}" alt="Affiche de {{ course.title }}">
+      {% endif %}
+      {% include 'training/includes/course_video.html' with panel_class='course-video-public' button_class='btn btn-primary' %}
+      <div class="training-article-body">{{ course.content|linebreaks }}</div>
+    </article>
+    <aside class="article-sidebar">
+      <h3>Ressources</h3>
+      {% if course.document %}<a class="btn btn-outline" href="{{ course.document.url }}" download>Telecharger le document</a>{% endif %}
+      {% if not course.has_video and not course.document %}<p>Aucune ressource jointe.</p>{% endif %}
+      <div class="member-cta public-quiz-box">
+        <strong>Testez vos connaissances</strong>
+        {% if course.questions.exists %}
+          {% if latest_attempt %}<div class="public-quiz-score">Dernier score : {{ latest_attempt.score }}/{{ latest_attempt.total }} ({{ latest_attempt.percentage }} %)</div>{% endif %}
+          {% if user.is_authenticated %}
+            {% if quiz_completed %}
+              <p class="public-quiz-complete">Quiz termine. Vous ne pouvez plus le reprendre.</p>
+            {% elif not video_completed %}
+              <p class="public-quiz-locked">Regardez la video jusqu'a la fin pour debloquer le quiz.</p>
+              <button class="btn btn-primary w-100" type="button" data-open-quiz disabled>Demarrer le quiz</button>
+            {% else %}
+              <p>{{ course.questions.count }} question{{ course.questions.count|pluralize }} pour verifier ce que vous avez retenu.</p>
+              <button class="btn btn-primary w-100" type="button" data-open-quiz>{% if quiz_progress.answers %}Continuer le quiz{% else %}Demarrer le quiz{% endif %}</button>
+            {% endif %}
+          {% else %}
+            <p>Connectez-vous pour repondre au quiz et enregistrer votre score.</p>
+            <a href="{% url 'accounts:login' %}?next={{ request.path }}">Se connecter</a>
+          {% endif %}
+        {% else %}
+          <p>Aucun quiz n'est encore disponible pour cette formation.</p>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
+  {% if course.questions.exists and user.is_authenticated and not quiz_completed %}
+    <dialog class="public-quiz-dialog" id="courseQuizDialog" aria-labelledby="courseQuizTitle">
+      <form method="post" action="{% url 'public_site:training_quiz_submit' course.pk %}" class="public-quiz-window">
+        {% csrf_token %}
+        <header class="public-quiz-head">
+          <div>
+            <span>{{ course.get_theme_display }}</span>
+            <h2 id="courseQuizTitle">Quiz de la formation</h2>
+          </div>
+          <button type="button" class="public-quiz-close" data-close-quiz aria-label="Fermer le quiz">×</button>
+        </header>
+
+        <div class="public-quiz-progress" aria-hidden="true">
+          <i data-quiz-progress></i>
+        </div>
+        <p class="public-quiz-counter"><span data-quiz-current>1</span> / {{ course.questions.count }} questions</p>
+
+        <div class="public-quiz-steps">
+          {% for question in course.questions.all %}
+            <fieldset class="public-quiz-step" data-quiz-step {% if not forloop.first %}hidden{% endif %}>
+              <legend>{{ question.text }}</legend>
+              <div class="public-quiz-options">
+                {% for choice in question.choices.all %}
+                  <label>
+                    <input type="radio" name="question_{{ question.pk }}" value="{{ choice.pk }}" required>
+                    <span>{{ choice.text }}</span>
+                  </label>
+                {% endfor %}
+              </div>
+            </fieldset>
+          {% endfor %}
+        </div>
+
+        <footer class="public-quiz-actions">
+          <button class="btn btn-outline" type="button" data-prev-quiz>Precedent</button>
+          <button class="btn btn-outline" type="button" data-pause-quiz>Mettre en pause</button>
+          <button class="btn btn-primary" type="button" data-next-quiz>Suivant</button>
+          <button class="btn btn-primary" type="submit" data-submit-quiz hidden>Valider mes reponses</button>
+        </footer>
+      </form>
+    </dialog>
+  {% endif %}
+</section>
+
+{% if course.questions.exists and user.is_authenticated and not quiz_completed %}
+  {{ quiz_state|json_script:"quizInitialState" }}
+  <script>
+    (() => {
+      const dialog = document.getElementById('courseQuizDialog');
+      if (!dialog) return;
+
+      const initialState = JSON.parse(document.getElementById('quizInitialState').textContent);
+      const steps = Array.from(dialog.querySelectorAll('[data-quiz-step]'));
+      const openButton = document.querySelector('[data-open-quiz]');
+      const closeButton = dialog.querySelector('[data-close-quiz]');
+      const prevButton = dialog.querySelector('[data-prev-quiz]');
+      const pauseButton = dialog.querySelector('[data-pause-quiz]');
+      const nextButton = dialog.querySelector('[data-next-quiz]');
+      const submitButton = dialog.querySelector('[data-submit-quiz]');
+      const currentLabel = dialog.querySelector('[data-quiz-current]');
+      const progressBar = dialog.querySelector('[data-quiz-progress]');
+      const csrfToken = '{{ csrf_token }}';
+      const progressUrl = '{% url "public_site:training_quiz_progress" course.pk %}';
+      const videoCompleteUrl = '{% url "public_site:training_video_complete" course.pk %}';
+      const videoRequired = {{ video_required|yesno:"true,false" }};
+      let currentStep = Math.min(Number(initialState.current_index || 0), steps.length - 1);
+      let videoCompleted = {{ video_completed|yesno:"true,false" }};
+      let saveTimer = null;
+
+      function currentQuestionAnswered() {
+        return Boolean(steps[currentStep].querySelector('input[type="radio"]:checked'));
+      }
+
+      function collectAnswers() {
+        const answers = {};
+        steps.forEach((step) => {
+          const selected = step.querySelector('input[type="radio"]:checked');
+          if (selected) {
+            answers[selected.name.replace('question_', '')] = selected.value;
+          }
+        });
+        return answers;
+      }
+
+      async function saveProgress() {
+        if (!videoCompleted && videoRequired) return;
+        await fetch(progressUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+          },
+          body: JSON.stringify({
+            current_index: currentStep,
+            answers: collectAnswers(),
+          }),
+        });
+      }
+
+      function scheduleSave() {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          saveProgress().catch(() => {});
+        }, 250);
+      }
+
+      function renderStep() {
+        steps.forEach((step, index) => {
+          step.hidden = index !== currentStep;
+        });
+        currentLabel.textContent = String(currentStep + 1);
+        progressBar.style.width = `${((currentStep + 1) / steps.length) * 100}%`;
+        prevButton.disabled = currentStep === 0;
+        nextButton.hidden = currentStep === steps.length - 1;
+        submitButton.hidden = currentStep !== steps.length - 1;
+        nextButton.disabled = !currentQuestionAnswered();
+        submitButton.disabled = !currentQuestionAnswered();
+      }
+
+      function restoreAnswers() {
+        Object.entries(initialState.answers || {}).forEach(([questionId, choiceId]) => {
+          const input = dialog.querySelector(`input[name="question_${questionId}"][value="${choiceId}"]`);
+          if (input) input.checked = true;
+        });
+      }
+
+      function unlockQuiz() {
+        videoCompleted = true;
+        if (openButton) {
+          openButton.disabled = false;
+          openButton.textContent = Object.keys(collectAnswers()).length ? 'Continuer le quiz' : 'Demarrer le quiz';
+        }
+        const lockedCopy = document.querySelector('.public-quiz-locked');
+        if (lockedCopy) {
+          lockedCopy.textContent = `${steps.length} question${steps.length > 1 ? 's' : ''} pour verifier ce que vous avez retenu.`;
+          lockedCopy.classList.remove('public-quiz-locked');
+        }
+      }
+
+      async function markVideoCompleted() {
+        if (!videoRequired || videoCompleted) return;
+        const response = await fetch(videoCompleteUrl, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': csrfToken },
+        });
+        if (response.ok) unlockQuiz();
+      }
+
+      restoreAnswers();
+
+      openButton.addEventListener('click', () => {
+        if (videoRequired && !videoCompleted) return;
+        dialog.showModal();
+        renderStep();
+      });
+
+      closeButton.addEventListener('click', () => {
+        saveProgress().finally(() => dialog.close());
+      });
+
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) {
+          saveProgress().finally(() => dialog.close());
+        }
+      });
+
+      dialog.addEventListener('change', (event) => {
+        if (event.target.matches('input[type="radio"]')) {
+          renderStep();
+          scheduleSave();
+        }
+      });
+
+      prevButton.addEventListener('click', () => {
+        currentStep = Math.max(0, currentStep - 1);
+        renderStep();
+        scheduleSave();
+      });
+
+      pauseButton.addEventListener('click', () => {
+        saveProgress().finally(() => dialog.close());
+      });
+
+      nextButton.addEventListener('click', () => {
+        if (!currentQuestionAnswered()) return;
+        currentStep = Math.min(steps.length - 1, currentStep + 1);
+        renderStep();
+        scheduleSave();
+      });
+
+      dialog.querySelector('form').addEventListener('submit', () => {
+        clearTimeout(saveTimer);
+      });
+
+      document.querySelectorAll('[data-course-video]').forEach((video) => {
+        video.addEventListener('ended', () => {
+          markVideoCompleted().catch(() => {});
+        });
+      });
+
+      const youtubeFrame = document.querySelector('[data-youtube-video]');
+      if (youtubeFrame) {
+        window.onYouTubeIframeAPIReady = () => {
+          new YT.Player(youtubeFrame, {
+            events: {
+              onStateChange: (event) => {
+                if (event.data === YT.PlayerState.ENDED) {
+                  markVideoCompleted().catch(() => {});
+                }
+              },
+            },
+          });
+        };
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+    })();
+  </script>
+{% endif %}
 {% endblock %}

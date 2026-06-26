@@ -9,5 +9,6 @@ urlpatterns = [
     path('publier/', views.course_create, name='create'),
     path('<int:pk>/', views.course_detail, name='detail'),
     path('<int:pk>/modifier/', views.course_update, name='update'),
+    path('<int:pk>/quiz/gerer/', views.course_quiz_manage, name='quiz_manage'),
     path('<int:pk>/quiz/', views.quiz_submit, name='quiz_submit'),
 ]

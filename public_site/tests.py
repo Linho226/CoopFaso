@@ -8,7 +8,14 @@ from django.utils import timezone
 
 from cooperatives.models import Cooperative
 from products.models import Product, ProductCategory
-from training.models import Course
+from training.models import (
+    Course,
+    CourseProgress,
+    QuizAttempt,
+    QuizChoice,
+    QuizProgress,
+    QuizQuestion,
+)
 
 from .models import ContactMessage, News
 
@@ -50,6 +57,20 @@ class PublicSiteTests(TestCase):
             content='Contenu public',
             author=author,
             is_published=True,
+        )
+        self.question = QuizQuestion.objects.create(
+            course=self.course,
+            text='Quel outil economise l eau ?',
+        )
+        self.correct_choice = QuizChoice.objects.create(
+            question=self.question,
+            text='Le goutte a goutte',
+            is_correct=True,
+        )
+        QuizChoice.objects.create(
+            question=self.question,
+            text='L arrosage a midi',
+            is_correct=False,
         )
         self.news = News.objects.create(
             title='Actualite publique',
@@ -121,6 +142,118 @@ class PublicSiteTests(TestCase):
             reverse('public_site:product_detail', args=[self.hidden_product.pk])
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_public_training_detail_shows_quiz_for_authenticated_user(self):
+        user = User.objects.create_user(username='public_learner')
+        self.client.force_login(user)
+
+        response = self.client.get(
+            reverse('public_site:training_detail', args=[self.course.pk])
+        )
+
+        self.assertContains(response, 'Testez vos connaissances')
+        self.assertContains(response, 'Quel outil economise l eau ?')
+        self.assertContains(response, 'Demarrer le quiz')
+        self.assertContains(response, 'courseQuizDialog')
+        self.assertContains(response, 'Valider mes reponses')
+
+    def test_public_training_quiz_submit_records_score(self):
+        user = User.objects.create_user(username='public_quiz_user')
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse('public_site:training_quiz_submit', args=[self.course.pk]),
+            {f'question_{self.question.pk}': self.correct_choice.pk},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('public_site:training_detail', args=[self.course.pk]),
+        )
+        attempt = QuizAttempt.objects.get(user=user, course=self.course)
+        self.assertEqual(attempt.score, 1)
+
+    def test_public_quiz_requires_video_completion_when_course_has_video(self):
+        self.course.video_url = 'https://example.com/video.mp4'
+        self.course.save(update_fields=['video_url'])
+        user = User.objects.create_user(username='public_locked_quiz_user')
+        self.client.force_login(user)
+
+        detail_response = self.client.get(
+            reverse('public_site:training_detail', args=[self.course.pk])
+        )
+        self.assertContains(detail_response, 'Regardez la video')
+
+        response = self.client.post(
+            reverse('public_site:training_quiz_submit', args=[self.course.pk]),
+            {f'question_{self.question.pk}': self.correct_choice.pk},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('public_site:training_detail', args=[self.course.pk]),
+        )
+        self.assertFalse(QuizAttempt.objects.filter(user=user, course=self.course).exists())
+
+    def test_public_video_completion_unlocks_quiz(self):
+        self.course.video_url = 'https://example.com/video.mp4'
+        self.course.save(update_fields=['video_url'])
+        user = User.objects.create_user(username='public_video_done_user')
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse('public_site:training_video_complete', args=[self.course.pk])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            CourseProgress.objects.get(user=user, course=self.course).video_completed
+        )
+
+    def test_public_quiz_progress_is_saved(self):
+        user = User.objects.create_user(username='public_quiz_pause_user')
+        self.client.force_login(user)
+
+        response = self.client.post(
+            reverse('public_site:training_quiz_progress', args=[self.course.pk]),
+            data='{"current_index": 0, "answers": {"%s": "%s"}}' % (
+                self.question.pk,
+                self.correct_choice.pk,
+            ),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        progress = QuizProgress.objects.get(user=user, course=self.course)
+        self.assertEqual(progress.answers[str(self.question.pk)], str(self.correct_choice.pk))
+        self.assertEqual(progress.current_index, 0)
+
+    def test_completed_public_quiz_cannot_be_reopened_or_resubmitted(self):
+        user = User.objects.create_user(username='public_completed_quiz_user')
+        QuizAttempt.objects.create(
+            user=user,
+            course=self.course,
+            score=1,
+            total=1,
+        )
+        self.client.force_login(user)
+
+        detail_response = self.client.get(
+            reverse('public_site:training_detail', args=[self.course.pk])
+        )
+        self.assertContains(detail_response, 'Quiz termine')
+        self.assertNotContains(detail_response, 'Demarrer le quiz')
+
+        response = self.client.post(
+            reverse('public_site:training_quiz_submit', args=[self.course.pk]),
+            {f'question_{self.question.pk}': self.correct_choice.pk},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse('public_site:training_detail', args=[self.course.pk]),
+        )
+        self.assertEqual(QuizAttempt.objects.filter(user=user, course=self.course).count(), 1)
 
 
 class NewsManagementTests(TestCase):

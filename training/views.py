@@ -1,23 +1,25 @@
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.access import is_admin, roles_required
 from accounts.models import UserProfile
 
-from .forms import CourseForm
-from .models import Course, QuizAttempt
+from .forms import CourseForm, QuizQuestionCreateForm
+from .models import Course, QuizAttempt, QuizChoice, QuizQuestion
 
 
 def can_manage_training(user):
     return is_admin(user)
 
 
-@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.FARMER)
+@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.FARMER, UserProfile.Role.BUYER)
 def course_list(request):
     query = request.GET.get('q', '').strip()
     theme = request.GET.get('theme', '').strip()
-    courses = Course.objects.select_related('author')
+    courses = Course.objects.select_related('author').annotate(
+        question_count=Count('questions', distinct=True),
+    )
     if not can_manage_training(request.user):
         courses = courses.filter(is_published=True)
     if query:
@@ -37,7 +39,7 @@ def course_list(request):
     })
 
 
-@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.FARMER)
+@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.FARMER, UserProfile.Role.BUYER)
 def course_detail(request, pk):
     course = get_object_or_404(
         Course.objects.prefetch_related('questions__choices'),
@@ -90,7 +92,47 @@ def course_update(request, pk):
     })
 
 
-@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.FARMER)
+@roles_required(UserProfile.Role.ADMIN)
+def course_quiz_manage(request, pk):
+    course = get_object_or_404(
+        Course.objects.prefetch_related('questions__choices'),
+        pk=pk,
+    )
+    form = QuizQuestionCreateForm()
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'delete_question':
+            question = get_object_or_404(
+                course.questions,
+                pk=request.POST.get('question_id'),
+            )
+            question.delete()
+            messages.success(request, 'Question supprimee.')
+            return redirect('training:quiz_manage', pk=course.pk)
+
+        form = QuizQuestionCreateForm(request.POST)
+        if form.is_valid():
+            next_order = course.questions.count() + 1
+            question = QuizQuestion.objects.create(
+                course=course,
+                text=form.cleaned_data['question'],
+                order=next_order,
+            )
+            QuizChoice.objects.bulk_create([
+                QuizChoice(question=question, **choice)
+                for choice in form.choices_payload
+            ])
+            messages.success(request, 'Question ajoutee au quiz.')
+            return redirect('training:quiz_manage', pk=course.pk)
+
+    return render(request, 'training/course_quiz_manage.html', {
+        'course': course,
+        'form': form,
+    })
+
+
+@roles_required(UserProfile.Role.ADMIN, UserProfile.Role.FARMER, UserProfile.Role.BUYER)
 def quiz_submit(request, pk):
     course = get_object_or_404(
         Course.objects.prefetch_related('questions__choices'),
