@@ -1,4 +1,5 @@
 from django import forms
+from django.utils import timezone
 from .models import Production
 from members.models import Member
 from products.models import Product
@@ -30,6 +31,11 @@ class ProductionForm(forms.ModelForm):
         if cooperative:
             self.fields['member'].queryset = Member.objects.filter(cooperative=cooperative)
             self.fields['product'].queryset = Product.objects.filter(cooperative=cooperative)
+        self.fields['harvest_date'].initial = (
+            self.instance.harvest_date
+            if self.instance and self.instance.pk
+            else timezone.localdate()
+        )
         
         for field in self.fields.values():
             if isinstance(field.widget, forms.Select):
@@ -69,6 +75,11 @@ class FarmerProductionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if cooperative:
             self.fields['product'].queryset = Product.objects.filter(cooperative=cooperative)
+        self.fields['harvest_date'].initial = (
+            self.instance.harvest_date
+            if self.instance and self.instance.pk
+            else timezone.localdate()
+        )
         for field in self.fields.values():
             if isinstance(field.widget, forms.Select):
                 field.widget.attrs.setdefault('class', 'form-select')

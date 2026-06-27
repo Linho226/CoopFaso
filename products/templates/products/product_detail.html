@@ -44,7 +44,7 @@
           <div class="p-3 bg-light rounded-4">
             <div class="text-muted small">Quantite disponible en stock</div>
             <div class="fw-bold fs-4 {% if product.quantity_available > 0 %}text-primary{% else %}text-danger{% endif %}">
-              {{ product.quantity_available }}
+              {{ product.quantity_available|floatformat:"-2" }} {{ product.get_unit_display }}
             </div>
           </div>
           {% if product.quantity_available > 0 %}

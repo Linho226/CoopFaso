@@ -11,6 +11,7 @@ class ProductForm(forms.ModelForm):
             'description',
             'price',
             'quantity_available',
+            'unit',
             'image',
             'is_published',
         )
@@ -21,6 +22,7 @@ class ProductForm(forms.ModelForm):
             'description': 'Description',
             'price': 'Prix (FCFA)',
             'quantity_available': 'Quantite disponible',
+            'unit': 'Unite',
             'image': 'Image',
             'is_published': 'Visible dans le catalogue public',
         }
@@ -31,11 +33,14 @@ class ProductForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         cooperative = kwargs.pop('cooperative', None)
         super().__init__(*args, **kwargs)
+        self.fields['unit'].initial = Product.Unit.UNIT
+        self.fields['unit'].required = False
         if cooperative:
             self.fields['cooperative'].initial = cooperative
             self.fields['cooperative'].queryset = self.fields[
                 'cooperative'
             ].queryset.filter(pk=cooperative.pk)
+            self.fields['cooperative'].disabled = True
         for field in self.fields.values():
             if isinstance(field.widget, forms.Select):
                 field.widget.attrs.setdefault('class', 'form-select')
@@ -45,3 +50,6 @@ class ProductForm(forms.ModelForm):
                 field.widget.attrs.setdefault('class', 'form-control')
             else:
                 field.widget.attrs.setdefault('class', 'form-control')
+
+    def clean_unit(self):
+        return self.cleaned_data.get('unit') or Product.Unit.UNIT

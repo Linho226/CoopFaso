@@ -4,9 +4,13 @@
     {% if product.category %}<em>{{ product.category.name }}</em>{% endif %}
   </a>
   <div class="product-body">
-    <small>{{ product.cooperative.name }} · {{ product.cooperative.region }}</small>
+    <div class="product-origin">
+      <small>{{ product.cooperative.name }}</small>
+      <span>{{ product.cooperative.region }}</span>
+    </div>
     <h3><a href="{% url 'public_site:product_detail' product.pk %}">{{ product.name }}</a></h3>
     <p>{{ product.description|default:"Produit agricole local."|truncatewords:14 }}</p>
-    <div class="product-meta"><strong>{{ product.price|floatformat:"0" }} FCFA</strong><span>{{ product.quantity_available|floatformat:"-2" }} disponibles</span></div>
+    <div class="product-meta"><strong>{{ product.price|floatformat:"0" }} FCFA</strong><span>{{ product.quantity_available|floatformat:"-2" }} {{ product.get_unit_display }} disponibles</span></div>
+    <a class="product-card-action" href="{% url 'public_site:product_detail' product.pk %}">Voir le produit</a>
   </div>
 </article>

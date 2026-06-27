@@ -131,7 +131,7 @@
         <header class="analytics-card-head"><div><span>Alertes</span><h2>Stocks faibles</h2></div><a href="{% url 'products:list' %}">Gerer</a></header>
         <div class="analytics-alert-list">
           {% for product in low_stock_products %}
-            <div><span class="alert-dot"></span><div><strong>{{ product.name }}</strong><small>{{ product.cooperative.name }}</small></div><b>{{ product.quantity_available|floatformat:"-2" }}</b></div>
+            <div><span class="alert-dot"></span><div><strong>{{ product.name }}</strong><small>{{ product.cooperative.name }}</small></div><b>{{ product.quantity_available|floatformat:"-2" }} {{ product.get_unit_display }}</b></div>
           {% empty %}<p class="analytics-empty">Aucune alerte de stock.</p>{% endfor %}
         </div>
       </article>
@@ -175,7 +175,7 @@
     {% if not member %}<div class="alert alert-warning">Votre compte n'est pas rattache a une fiche membre.</div>{% endif %}
     <section class="analytics-kpi-grid farmer-kpis">
       <a class="analytics-kpi tone-green" href="{% url 'productions:list' %}"><span class="kpi-icon">DE</span><div><small>Declarations</small><strong>{{ production_count }}</strong><em>Recoltes enregistrees</em></div></a>
-      <div class="analytics-kpi tone-cyan"><span class="kpi-icon">QT</span><div><small>Quantite produite</small><strong>{{ production_total|floatformat:"-2" }}</strong><em>Unites cumulees</em></div></div>
+      <div class="analytics-kpi tone-cyan"><span class="kpi-icon">QT</span><div><small>Quantite produite</small><strong>{{ production_total|floatformat:"-2" }}</strong><em>Quantite cumulee</em></div></div>
       <div class="analytics-kpi tone-amber"><span class="kpi-icon">RE</span><div><small>Revenus estimes</small><strong>{{ farmer_revenue|floatformat:"0" }}</strong><em>FCFA</em></div></div>
       <a class="analytics-kpi tone-violet" href="{% url 'training:list' %}"><span class="kpi-icon">FO</span><div><small>Formations</small><strong>{{ course_count }}</strong><em>Cours disponibles</em></div></a>
     </section>
@@ -186,7 +186,7 @@
       </article>
       <article class="analytics-card"><header class="analytics-card-head"><div><span>Repartition</span><h2>Mes produits</h2></div></header><div class="analytics-bars">{% for row in farmer_products %}<div class="analytics-bar-row"><div><span>{{ row.label }}</span><strong>{{ row.value|floatformat:"-2" }}</strong></div><div><i class="bar-green" style="width:{{ row.percentage }}%"></i></div></div>{% empty %}<p class="analytics-empty">Aucune production.</p>{% endfor %}</div></article>
     </section>
-    <section class="analytics-card"><header class="analytics-card-head"><div><span>Historique</span><h2>Dernieres recoltes</h2></div><a href="{% url 'productions:create' %}">Declarer une recolte</a></header><div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Produit</th><th>Quantite</th><th>Date</th><th>Valeur estimee</th></tr></thead><tbody>{% for production in recent_productions %}<tr><td>{{ production.product.name }}</td><td>{{ production.quantity|floatformat:"-2" }}</td><td>{{ production.harvest_date|date:"d/m/Y" }}</td><td>{{ production.estimated_price|floatformat:"0" }} FCFA</td></tr>{% empty %}<tr><td colspan="4">Aucune recolte declaree.</td></tr>{% endfor %}</tbody></table></div></section>
+    <section class="analytics-card"><header class="analytics-card-head"><div><span>Historique</span><h2>Dernieres recoltes</h2></div><a href="{% url 'productions:create' %}">Declarer une recolte</a></header><div class="analytics-table-wrap"><table class="analytics-table"><thead><tr><th>Produit</th><th>Quantite</th><th>Date</th><th>Valeur estimee</th></tr></thead><tbody>{% for production in recent_productions %}<tr><td>{{ production.product.name }}</td><td>{{ production.quantity|floatformat:"-2" }} {{ production.product.get_unit_display }}</td><td>{{ production.harvest_date|date:"d/m/Y" }}</td><td>{{ production.estimated_price|floatformat:"0" }} FCFA</td></tr>{% empty %}<tr><td colspan="4">Aucune recolte declaree.</td></tr>{% endfor %}</tbody></table></div></section>
   {% endif %}
 </div>
 {% endblock %}

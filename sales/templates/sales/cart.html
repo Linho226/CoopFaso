@@ -30,6 +30,7 @@
                     <form method="post" action="{% url 'sales:cart_update' item.product.pk %}" class="d-flex gap-2">
                       {% csrf_token %}
                       <input class="form-control form-control-sm" type="number" name="quantity" min="1" max="{{ item.product.quantity_available|floatformat:'0' }}" value="{{ item.quantity }}">
+                      <span class="small text-muted align-self-center">{{ item.product.get_unit_display }}</span>
                       <button class="btn btn-sm btn-outline-primary" type="submit">OK</button>
                     </form>
                   </td>

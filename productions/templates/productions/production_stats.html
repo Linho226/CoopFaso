@@ -15,7 +15,7 @@
     <div class="col-md-6">
       <div class="dashboard-panel p-4 text-center">
         <h6 class="text-muted text-uppercase small fw-bold">Quantite totale recoltee</h6>
-        <p class="display-6 fw-bold text-primary mb-0">{{ total_qty }} unites</p>
+        <p class="display-6 fw-bold text-primary mb-0">{{ total_qty }}</p>
       </div>
     </div>
     <div class="col-md-6">
@@ -41,7 +41,7 @@
           {% for item in by_product %}
             <tr>
               <td class="fw-semibold">{{ item.product__name }}</td>
-              <td>{{ item.qty }} unites</td>
+              <td>{{ item.qty|floatformat:"-2" }} {{ item.product__unit }}</td>
               <td class="text-success fw-bold">{{ item.val }} FCFA</td>
             </tr>
           {% empty %}

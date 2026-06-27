@@ -103,5 +103,34 @@ class ProductTests(TestCase):
             'quantity_available': 5,
         })
 
+        self.assertEqual(response.status_code, 302)
+        product = Product.objects.get(name='Produit interdit')
+        self.assertEqual(product.cooperative, self.cooperative)
+
+    def test_admin_create_product_prefills_selected_cooperative(self):
+        admin = User.objects.create_user(
+            username='products_admin',
+            password='Password123!',
+            is_staff=True,
+        )
+        self.client.force_login(admin)
+        url = reverse('products:create') + f'?cooperative={self.other_cooperative.pk}'
+
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(Product.objects.filter(name='Produit interdit').exists())
+        self.assertEqual(
+            response.context['form'].fields['cooperative'].initial,
+            self.other_cooperative,
+        )
+
+        response = self.client.post(url, {
+            'name': 'Fonio',
+            'price': 150,
+            'quantity_available': 8,
+        })
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            Product.objects.get(name='Fonio').cooperative,
+            self.other_cooperative,
+        )

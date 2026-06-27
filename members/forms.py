@@ -38,6 +38,7 @@ class MemberForm(forms.ModelForm):
             self.fields['cooperative'].queryset = self.fields[
                 'cooperative'
             ].queryset.filter(pk=cooperative.pk)
+            self.fields['cooperative'].disabled = True
         for field in self.fields.values():
             if isinstance(field.widget, forms.Select):
                 field.widget.attrs.setdefault('class', 'form-select')

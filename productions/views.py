@@ -17,6 +17,15 @@ from .forms import ProductionForm, FarmerProductionForm
 from .models import Production
 
 
+def _selected_cooperative(request):
+    if is_manager(request.user):
+        return user_cooperative(request.user)
+    cooperative_id = request.GET.get('cooperative')
+    if cooperative_id:
+        return Cooperative.objects.filter(pk=cooperative_id).first()
+    return user_cooperative(request.user)
+
+
 @roles_required(
     UserProfile.Role.ADMIN,
     UserProfile.Role.COOPERATIVE_MANAGER,
@@ -62,7 +71,7 @@ def production_create(request):
     user = request.user
     can_manage = is_admin(user) or is_manager(user)
     member = user_member(user)
-    cooperative = user_cooperative(user)
+    cooperative = _selected_cooperative(request)
     if is_farmer(user) and member:
         cooperative = member.cooperative
 
@@ -163,7 +172,8 @@ def production_stats(request):
     )
     
     by_product = productions.values(
-        'product__name'
+        'product__name',
+        'product__unit',
     ).annotate(
         qty=Sum('quantity'),
         val=Sum('estimated_price')

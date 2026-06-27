@@ -28,7 +28,7 @@
         <h2 class="h5 fw-bold mb-3">Votre commande</h2>
         {% for item in items %}
           <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
-            <span>{{ item.product.name }} × {{ item.quantity }}</span>
+            <span>{{ item.product.name }} × {{ item.quantity }} {{ item.product.get_unit_display }}</span>
             <strong>{{ item.subtotal }} FCFA</strong>
           </div>
         {% endfor %}

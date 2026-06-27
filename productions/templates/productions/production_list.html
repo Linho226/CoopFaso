@@ -11,7 +11,7 @@
       {% if can_manage %}
         <a class="btn btn-outline-primary" href="{% url 'productions:stats' %}">Statistiques</a>
       {% endif %}
-      <a class="btn btn-success" href="{% url 'productions:create' %}">Declarer une recolte</a>
+      <a class="btn btn-success" href="{% url 'productions:create' %}{% if selected_cooperative %}?cooperative={{ selected_cooperative }}{% endif %}">Declarer une recolte</a>
     </div>
   </div>
 
@@ -48,7 +48,7 @@
             <td class="fw-semibold">{{ prod.member.full_name }}</td>
             {% if is_admin_view %}<td>{{ prod.member.cooperative.name }}</td>{% endif %}
             <td>{{ prod.product.name }}</td>
-            <td>{{ prod.quantity }} unites</td>
+            <td>{{ prod.quantity|floatformat:"-2" }} {{ prod.product.get_unit_display }}</td>
             <td>{{ prod.harvest_date|date:'d/m/Y' }}</td>
             <td class="text-success fw-bold">{{ prod.estimated_price }} FCFA</td>
             <td class="text-end">

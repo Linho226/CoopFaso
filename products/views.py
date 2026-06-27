@@ -9,6 +9,16 @@ from cooperatives.models import Cooperative
 from .forms import ProductForm
 from .models import Product
 
+
+def _selected_cooperative(request):
+    if is_manager(request.user):
+        return user_cooperative(request.user)
+    cooperative_id = request.GET.get('cooperative') or request.POST.get('cooperative')
+    if cooperative_id:
+        return Cooperative.objects.filter(pk=cooperative_id).first()
+    return None
+
+
 @roles_required(UserProfile.Role.ADMIN, UserProfile.Role.COOPERATIVE_MANAGER)
 def product_list(request):
     query = request.GET.get('q', '').strip()
@@ -54,7 +64,7 @@ def product_detail(request, pk):
 
 @roles_required(UserProfile.Role.ADMIN, UserProfile.Role.COOPERATIVE_MANAGER)
 def product_create(request):
-    cooperative = user_cooperative(request.user) if is_manager(request.user) else None
+    cooperative = _selected_cooperative(request)
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES, cooperative=cooperative)
         if form.is_valid():

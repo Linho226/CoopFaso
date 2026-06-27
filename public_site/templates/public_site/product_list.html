@@ -1,15 +1,15 @@
 {% extends 'public_site/base.html' %}
 {% block title %}Catalogue · CoopFaso{% endblock %}
 {% block content %}
-<section class="page-hero"><div class="public-container"><span class="eyebrow">Marche agricole</span><h1>Catalogue des produits</h1><p>Recherchez les produits disponibles par categorie, cooperative ou region.</p></div></section>
-<section class="public-section"><div class="public-container">
-  <form class="filter-bar" method="get">
+<section class="page-hero catalog-hero"><div class="public-container"><span class="eyebrow">Marche agricole</span><h1>Catalogue des produits</h1><p>Recherchez les produits disponibles par categorie, cooperative ou region.</p></div></section>
+<section class="public-section catalog-section"><div class="public-container catalog-shell">
+  <form class="filter-bar catalog-filter" method="get">
     <input type="search" name="q" value="{{ query }}" placeholder="Produit ou cooperative">
     <select name="category"><option value="">Toutes les categories</option>{% for category in categories %}<option value="{{ category.pk }}" {% if selected_category == category.pk|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select>
     <select name="region"><option value="">Toutes les regions</option>{% for region in regions %}<option value="{{ region }}" {% if selected_region == region %}selected{% endif %}>{{ region }}</option>{% endfor %}</select>
     <button class="btn btn-primary" type="submit">Rechercher</button>
   </form>
-  <div class="results-head"><strong>{{ products|length }} produit{{ products|length|pluralize }}</strong>{% if query or selected_category or selected_region %}<a href="{% url 'public_site:products' %}">Reinitialiser les filtres</a>{% endif %}</div>
-  <div class="card-grid product-grid">{% for product in products %}{% include 'public_site/includes/product_card.html' %}{% empty %}<div class="empty-state">Aucun produit ne correspond a votre recherche.</div>{% endfor %}</div>
+  <div class="results-head catalog-results"><strong>{{ products|length }} produit{{ products|length|pluralize }}</strong>{% if query or selected_category or selected_region %}<a href="{% url 'public_site:products' %}">Reinitialiser les filtres</a>{% endif %}</div>
+  <div class="card-grid product-grid catalog-product-grid">{% for product in products %}{% include 'public_site/includes/product_card.html' %}{% empty %}<div class="empty-state">Aucun produit ne correspond a votre recherche.</div>{% endfor %}</div>
 </div></section>
 {% endblock %}

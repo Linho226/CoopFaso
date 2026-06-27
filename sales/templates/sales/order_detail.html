@@ -24,7 +24,7 @@
           <thead class="table-light"><tr><th>Produit</th><th>Prix</th><th>Quantite</th><th>Sous-total</th></tr></thead>
           <tbody>
             {% for item in items %}
-              <tr><td class="fw-bold">{{ item.product_name }}</td><td>{{ item.unit_price }} FCFA</td><td>{{ item.quantity }}</td><td class="fw-bold">{{ item.subtotal }} FCFA</td></tr>
+              <tr><td class="fw-bold">{{ item.product_name }}</td><td>{{ item.unit_price }} FCFA</td><td>{{ item.quantity }} {{ item.product.get_unit_display }}</td><td class="fw-bold">{{ item.subtotal }} FCFA</td></tr>
             {% endfor %}
           </tbody>
           <tfoot><tr><th colspan="3" class="text-end">Total</th><th class="text-success fs-5">{{ visible_total }} FCFA</th></tr></tfoot>
